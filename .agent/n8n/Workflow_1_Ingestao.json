@@ -1,0 +1,136 @@
+{
+    "name": "IRIS - Ingestão de Pendências",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "iris-ingestor",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "e8aab5eb-06e8-46da-b72e-8a22146f49d9",
+            "name": "Webhook Ingestor",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "fieldToSplitOut": "body.disparos_ativos",
+                "options": {}
+            },
+            "id": "2dce4249-1af4-4340-84c1-4b15d0382fca",
+            "name": "Split In Batches",
+            "type": "n8n-nodes-base.itemLists",
+            "typeVersion": 3,
+            "position": [
+                420,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForEachItem",
+                "jsCode": "const item = $input.item.json;\n\nreturn {\n  json: {\n    id_disparo: item.idDisparo,\n    id_cliente: item.idCliente,\n    prioridade: item.prioridade || 0,\n    data_evento: item.data,\n    hora_evento: item.hora,\n    evento_codigo: item.evento,\n    patrimonio: item.patrimonio,\n    particao: item.particao,\n    agrupamento: item.agrupamento,\n    nome: item.nome,\n    endereco: item.endereco,\n    status: 'pendente',\n    raw: item\n  }\n};"
+            },
+            "id": "4b5e29fa-68ab-40da-abb8-831610427c38",
+            "name": "Data Mapping (Code)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                640,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "upsert",
+                "schema": "public",
+                "table": "iris_pendencias",
+                "columns": "id_disparo,id_cliente,prioridade,data_evento,hora_evento,evento_codigo,patrimonio,particao,agrupamento,nome,endereco,status,raw",
+                "updateKey": "id_disparo",
+                "options": {}
+            },
+            "id": "a92e10db-0975-4fc1-aaba-256d0bd2fb27",
+            "name": "Supabase Upsert",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.2,
+            "position": [
+                860,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_CREDENTIAL_ID",
+                    "name": "Supabase Postgres"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"status\": \"success\",\n  \"items_processed\": {{$items().length}}\n}",
+                "options": {}
+            },
+            "id": "ebc924bc-bcf6-4dcd-9ff1-d5757d5c95a5",
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1080,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Ingestor": {
+            "main": [
+                [
+                    {
+                        "node": "Split In Batches",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split In Batches": {
+            "main": [
+                [
+                    {
+                        "node": "Data Mapping (Code)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Data Mapping (Code)": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Upsert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase Upsert": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

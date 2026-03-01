@@ -1,0 +1,13 @@
+{
+    "name": "iris-collector",
+    "version": "2.0.0",
+    "description": "Coletor de eventos IRIS Legacy via Puppeteer",
+    "main": "iris_collector.js",
+    "scripts": {
+        "start": "node iris_collector.js"
+    },
+    "dependencies": {
+        "axios": "^1.7.0",
+        "puppeteer": "^22.0.0"
+    }
+}

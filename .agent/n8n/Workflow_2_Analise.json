@@ -1,0 +1,191 @@
+{
+    "name": "IRIS - Análise IA Sob Demanda",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "iris-analisar",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "281b378e-0af6-4a42-8869-7c65cde9afcd",
+            "name": "Webhook App (Analisar)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT * FROM public.iris_pendencias WHERE id_disparo = '{{$json.body.id_disparo}}';",
+                "options": {}
+            },
+            "id": "e6bd35fa-94df-416b-bc75-a5d62cf9b1a0",
+            "name": "Get Row Supabase",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.2,
+            "position": [
+                420,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_CREDENTIAL_ID",
+                    "name": "Supabase Postgres"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "operation": "create",
+                "model": "gpt-4o",
+                "messages": {
+                    "messageValues": [
+                        {
+                            "role": "system",
+                            "message": "=Você é um especialista em segurança patrimonial. Analise esse evento crítico e responda em strict JSON com este formato: { \"score\": 0-100, \"hipotese\": \"txt\", \"acao_recomendada\": \"txt\", \"evidencias\": [ {\"tipo\": \"txt\", \"dado\": \"txt\"} ] }"
+                        },
+                        {
+                            "role": "user",
+                            "message": "=Evento a analisar:\n{{$json.raw}}"
+                        }
+                    ]
+                },
+                "options": {
+                    "responseFormat": "json_object"
+                }
+            },
+            "id": "ab1234cd-5678-ef90-1234-567890abcdef",
+            "name": "Analise OpenAI",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                640,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_CREDENTIAL",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForEachItem",
+                "jsCode": "const promptResult = JSON.parse($input.item.json.message.content);\nconst disparo = $('Get Row Supabase').item.json;\n\nreturn {\n  json: {\n    id_disparo: disparo.id_disparo,\n    id_cliente: disparo.id_cliente,\n    score: promptResult.score,\n    hipotese: promptResult.hipotese,\n    acao_recomendada: promptResult.acao_recomendada,\n    evidencias: promptResult.evidencias\n  }\n};"
+            },
+            "id": "7a9b4c2e-5f6d-4a1b-c6d5-e4f3a2b1c4d9",
+            "name": "Map IA Result",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                860,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "upsert",
+                "schema": "public",
+                "table": "iris_analises",
+                "columns": "id_disparo,id_cliente,score,hipotese,acao_recomendada,evidencias",
+                "updateKey": "id_disparo",
+                "options": {}
+            },
+            "id": "f8d3b2a5-c7e4-4d9a-9b8c-a1b2c3d4e5f6",
+            "name": "Save Analise Supabase",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.2,
+            "position": [
+                1080,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_CREDENTIAL_ID",
+                    "name": "Supabase Postgres"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={\n  \"status\": \"success\",\n  \"id_disparo\": \"{{$json.id_disparo}}\",\n  \"score_risco\": {{$json.score}},\n  \"hipotese\": \"{{$json.hipotese}}\",\n  \"acao_recomendada\": \"{{$json.acao_recomendada}}\",\n  \"evidencias\": {{$json.evidencias}}\n}",
+                "options": {}
+            },
+            "id": "c6e5d4f3-a2b1-4c3d-e5f6-g7h8i9j0k1l2",
+            "name": "Respond to App",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1300,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook App (Analisar)": {
+            "main": [
+                [
+                    {
+                        "node": "Get Row Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Row Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Analise OpenAI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Analise OpenAI": {
+            "main": [
+                [
+                    {
+                        "node": "Map IA Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Map IA Result": {
+            "main": [
+                [
+                    {
+                        "node": "Save Analise Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Analise Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to App",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
