@@ -1,0 +1,18 @@
+{
+    "timestamp_coleta": "2026-03-01T03:15:00Z",
+    "disparos_ativos": [
+        {
+            "idDisparo": "999999991",
+            "idCliente": "14404",
+            "prioridade": "null",
+            "data": "01/03/2026",
+            "hora": "00:15",
+            "evento": "E130",
+            "patrimonio": "16009",
+            "particao": "000",
+            "agrupamento": "Alarmes",
+            "nome": "TESTE MANUAL API 2",
+            "endereco": "RUA X"
+        }
+    ]
+}
