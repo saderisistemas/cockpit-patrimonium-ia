@@ -100,7 +100,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          position: 'relative',
         }}>
+          {/* Centered modest developer credit */}
+          <div style={{
+            position: 'absolute',
+            top: '0.4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.5rem',
+            color: 'rgba(255,255,255,0.15)',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            pointerEvents: 'none'
+          }}>
+            Desenvolvido por DANILO SADERI
+          </div>
+
           {/* Logo */}
           <div
             style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
@@ -115,7 +132,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 color: '#fff',
                 lineHeight: 1,
               }}>
-                IRIS <span style={{ color: '#8b2323' }}>COCKPIT</span>
+                IRIS <span style={{ color: '#8b2323' }}>COCKPIT DE EVENTOS REAL TIME</span>
               </div>
               <div style={{
                 fontFamily: "'JetBrains Mono', monospace",

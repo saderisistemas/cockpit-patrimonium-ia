@@ -5,13 +5,17 @@ export type Pendencia = Database['public']['Tables']['iris_pendencias']['Row'];
 export type Analise = Database['public']['Tables']['iris_analises']['Row'];
 
 export const api = {
-    // Buscar todas as pendências ativas
+    // Buscar pendências ativas (status pendente + últimas 2h)
     getPendencias: async () => {
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
         const { data, error } = await supabase
             .from('iris_pendencias')
             .select('*')
-            .order('prioridade', { ascending: true }) // 1 = mais alta
-            .order('capturado_em', { ascending: false });
+            .eq('status', 'pendente')
+            .gte('capturado_em', twoHoursAgo)
+            .order('prioridade', { ascending: true })
+            .order('capturado_em', { ascending: false })
+            .limit(200);
 
         if (error) throw error;
         return data as Pendencia[];
@@ -72,5 +76,16 @@ export const api = {
 
         if (!response.ok) throw new Error('Falha ao comunicar com o agente de IA.');
         return await response.json();
+    },
+
+    // Ação em massa para limpar a fila
+    limparFila: async () => {
+        const { error } = await supabase
+            .from('iris_pendencias')
+            .update({ status: 'arquivado_cockpit' })
+            .eq('status', 'pendente');
+
+        if (error) throw error;
+        return true;
     }
 };

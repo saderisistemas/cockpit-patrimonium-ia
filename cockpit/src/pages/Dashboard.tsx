@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, AlertTriangle, ShieldAlert, BadgeInfo, Activity, Search } from 'lucide-react';
+import { Eye, AlertTriangle, ShieldAlert, BadgeInfo, Activity, Search, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Pendencia } from '../lib/api';
 
@@ -9,6 +9,30 @@ export const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
+
+    // Filtro estrito para considerar apenas as prioridades visualizadas no painel Iris
+    const isRelevantEvent = (pend: Pendencia) => {
+        const prioValue = Number(pend.prioridade);
+        if (pend.evento_codigo === '9704') return true;
+        if (pend.evento_codigo?.startsWith('901')) return true;
+        if (pend.evento_codigo?.startsWith('E35')) return true;
+        if ([0, 1, 4, 5].includes(prioValue)) return true;
+        return false;
+    };
+
+    const handleLimparFila = async () => {
+        if (!confirm('Esta ação arquivará todas as pendências atuais do Cockpit. Deseja prosseguir?')) return;
+        setLoading(true);
+        try {
+            await api.limparFila();
+            await fetchPendencias();
+        } catch (error) {
+            console.error('Erro ao limpar fila:', error);
+            setLoading(false);
+        }
+    };
+
+    const activePendencias = pendencias.filter(p => p.status === 'pendente' && isRelevantEvent(p));
 
     const fetchPendencias = async () => {
         try {
@@ -44,7 +68,7 @@ export const Dashboard = () => {
             {/* HEADER & KPIs */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-white tracking-tight italic">FILA DE <span className="text-brand-red not-italic">ATENDIMENTO</span></h1>
+                    <h1 className="text-4xl font-black text-white tracking-tight italic">INTELIGÊNCIA ARTIFICIAL <span className="text-brand-red not-italic">PATRIMONIUM</span></h1>
                     <div className="flex items-center gap-3 mt-1">
                         <p className="text-slate-400 font-medium uppercase tracking-[0.3em] text-[10px]">Terminal de Monitoramento Iris</p>
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -67,7 +91,17 @@ export const Dashboard = () => {
                         <Activity className={`w-5 h-5 text-slate-400 group-hover:text-white transition-colors ${loading ? 'animate-spin' : ''}`} />
                         <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300">Atualizar</span>
                     </button>
-                    <div className="glass-card p-5 flex items-center gap-5 min-w-[220px] relative overflow-hidden group">
+
+                    <button
+                        onClick={handleLimparFila}
+                        disabled={loading}
+                        className="glass-card px-4 flex flex-col justify-center items-center gap-1 min-w-[80px] hover:bg-brand-red/10 border border-transparent hover:border-brand-red/30 transition-colors disabled:opacity-50 cursor-pointer group"
+                        title="Limpar Toda Fila"
+                    >
+                        <Trash2 className="w-5 h-5 text-slate-400 group-hover:text-brand-red transition-colors" />
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest group-hover:text-brand-red opacity-80">Limpar Fila</span>
+                    </button>
+                    <div className="glass-card tactical-border p-5 flex items-center gap-5 min-w-[220px] relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-1 h-full bg-brand-red opacity-50" />
                         <div className="w-14 h-14 bg-brand-red/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300">
                             <ShieldAlert className="w-8 h-8 text-brand-red" />
@@ -75,7 +109,7 @@ export const Dashboard = () => {
                         <div>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Críticos</p>
                             <p className="text-3xl font-black text-white tabular-nums">
-                                {pendencias.filter(p => (p.prioridade === 1 || p.prioridade === 2) && p.status === 'pendente').length}
+                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704').length}
                             </p>
                         </div>
                     </div>
@@ -88,7 +122,7 @@ export const Dashboard = () => {
                         <div>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pendentes</p>
                             <p className="text-3xl font-black text-white tabular-nums">
-                                {pendencias.filter(p => p.status === 'pendente').length}
+                                {activePendencias.length}
                             </p>
                         </div>
                     </div>
@@ -131,15 +165,14 @@ export const Dashboard = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : pendencias.length === 0 ? (
+                            ) : activePendencias.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-8 py-20 text-center text-slate-500 font-medium italic">
                                         Nenhum evento crítico na fila de monitoramento.
                                     </td>
                                 </tr>
                             ) : (
-                                pendencias
-                                    .filter(p => p.status === 'pendente')
+                                activePendencias
                                     .sort((a, b) => {
                                         // Sort newest first by date and time
                                         const dateA = new Date(`${a.data_evento}T${a.hora_evento}`);
@@ -157,50 +190,87 @@ export const Dashboard = () => {
                                         );
                                     })
                                     .map((pend) => {
-                                        const prio = getPriorityConfig(pend.prioridade);
+                                        const prioValue = Number(pend.prioridade);
+                                        const prio = getPriorityConfig(prioValue);
                                         const Icon = prio.icon;
-                                        const isCritical = pend.prioridade === 1;
+
+                                        // Pure event characteristics (Glows and Solid Badges) instead of muddy backgrounds
+                                        let borderColor = 'border-slate-500';
+                                        let badgeColor = 'bg-slate-500 text-white';
+                                        let prioLabel = prio.label;
+
+                                        // Specific Event Priorities (Green & Purple overrides & Power Outages)
+                                        if (pend.evento_codigo === '9704') {
+                                            borderColor = 'border-black';
+                                            badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]';
+                                            prioLabel = 'ENERGIA';
+                                        }
+                                        else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) {
+                                            borderColor = 'border-[#00ff00]';
+                                            badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]';
+                                            prioLabel = 'HÁBITO';
+                                        }
+                                        else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) {
+                                            borderColor = 'border-[#a855f7]';
+                                            badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]';
+                                            prioLabel = 'COMUNICAÇÃO';
+                                        }
+                                        // Standard IRIS Priorities
+                                        else if (prioValue === 0 || prioValue === 1) {
+                                            borderColor = 'border-[#ff0000]';
+                                            badgeColor = 'bg-[#ff0000] text-white shadow-[0_0_15px_rgba(255,0,0,0.4)]';
+                                        } else if (prioValue === 4) {
+                                            borderColor = 'border-white';
+                                            badgeColor = 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]';
+                                            prioLabel = 'ANALÍTICOS';
+                                        } else if (prioValue === 5) {
+                                            borderColor = 'border-[#007aff]';
+                                            badgeColor = 'bg-[#007aff] text-white shadow-[0_0_15px_rgba(0,122,255,0.4)]';
+                                        }
+
+                                        const dimClosed = pend.status !== 'pendente' ? 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0' : '';
 
                                         return (
-                                            <tr key={pend.id_disparo} className="group hover:bg-white/[0.03] transition-all duration-300">
-                                                <td className="px-8 py-6">
+                                            <tr key={pend.id_disparo} className={`group hover:bg-white/[0.05] transition-all duration-300 border-b border-white/5 bg-black/20 border-l-[6px] ${borderColor} ${dimClosed}`}>
+                                                <td className="px-6 py-3">
                                                     <div className="flex flex-col gap-2 items-start">
-                                                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-lg ${prio.color} ${isCritical && pend.status === 'pendente' ? 'animate-pulse' : ''}`}>
+                                                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColor} ${prioValue === 1 && pend.status === 'pendente' ? 'animate-pulse' : ''}`}>
                                                             <Icon className="w-3.5 h-3.5" />
-                                                            {prio.label}
+                                                            {prioLabel}
                                                         </div>
                                                         {pend.status === 'pendente' ? (
-                                                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-black/20 text-current opacity-90 border border-black/10">
                                                                 <Activity className="w-3 h-3" /> Pendente
                                                             </div>
                                                         ) : (
-                                                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                                                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-black/20 text-current opacity-90 border border-black/10">
                                                                 Fechado
                                                             </div>
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6 whitespace-nowrap">
-                                                    <div className="text-white font-bold text-base tracking-tight italic">{pend.hora_evento}</div>
-                                                    <div className="text-[10px] text-slate-500 font-black tracking-widest">{pend.data_evento}</div>
+                                                <td className="px-6 py-3 whitespace-nowrap">
+                                                    <div className="font-bold text-base tracking-tight italic">{pend.hora_evento}</div>
+                                                    <div className="text-[10px] opacity-80 font-black tracking-widest">{pend.data_evento}</div>
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="text-white font-bold text-base group-hover:text-brand-red transition-colors">{pend.nome}</div>
-                                                    <div className="text-xs text-slate-500 font-medium">Cod: {pend.id_cliente} • <span className="text-slate-400">{pend.patrimonio}</span></div>
+                                                <td className="px-6 py-3">
+                                                    <div className="font-black text-xl tracking-tight">{pend.patrimonio}</div>
+                                                    <div className="text-xs opacity-90 font-bold">{pend.nome}</div>
+                                                    <div className="text-[10px] opacity-70 font-medium">Cod: {pend.id_cliente}</div>
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="text-white font-bold">{pend.evento_codigo} {pend.desc_evento ? `- ${pend.desc_evento}` : ''}</div>
-                                                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                                                        Partição: {pend.particao} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}
+                                                <td className="px-6 py-3">
+                                                    <div className="font-bold">{pend.evento_codigo} {pend.desc_evento ? `- ${pend.desc_evento}` : ''}</div>
+                                                    <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">
+                                                        Zona: {pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6 text-right">
+                                                <td className="px-6 py-3 text-right">
                                                     <button
                                                         onClick={() => navigate(`/disparo/${pend.id_disparo}`)}
-                                                        className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-brand-red text-white text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 group/btn border border-white/5 hover:border-brand-red hover:shadow-xl hover:shadow-brand-red/20"
+                                                        className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-brand-red text-white text-[10px] font-black uppercase tracking-[0.1em] rounded-lg transition-all duration-300 group/btn border border-white/10 hover:border-brand-red hover:shadow-xl hover:shadow-brand-red/20"
                                                     >
-                                                        <Activity className="w-4 h-4 group-hover/btn:animate-pulse" />
-                                                        Monitorar
+                                                        <Activity className="w-3.5 h-3.5 group-hover/btn:animate-pulse" />
+                                                        ANALISAR COM IA
                                                     </button>
                                                 </td>
                                             </tr>
