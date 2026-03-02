@@ -5,7 +5,9 @@ import { supabase } from './lib/supabase';
 import { Dashboard } from './pages/Dashboard';
 import { DetalhesDisparo } from './pages/DetalheDisparo';
 import { Login } from './pages/Login';
-import { LogOut } from 'lucide-react';
+import Usuarios from './pages/Usuarios';
+import { LogOut, Users } from 'lucide-react';
+import { useUserRole } from './hooks/useUserRole';
 import logo from './assets/logo.png';
 import type { Session } from '@supabase/supabase-js';
 
@@ -36,6 +38,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const session = useSession();
   const user = session?.user ?? null;
+  const { isAdmin } = useUserRole();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -102,7 +105,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           justifyContent: 'space-between',
           position: 'relative',
         }}>
-          {/* Centered modest developer credit */}
+          {/* Centered modest developer credit - hidden on mobile */}
           <div style={{
             position: 'absolute',
             top: '0.4rem',
@@ -114,40 +117,40 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             letterSpacing: '0.25em',
             textTransform: 'uppercase',
             pointerEvents: 'none'
-          }}>
+          }} className="hidden md:block">
             Desenvolvido por DANILO SADERI
           </div>
 
           {/* Logo */}
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', minWidth: 0 }}
             onClick={() => navigate('/')}
           >
-            <img src={logo} alt="Patrimonium" style={{ height: '40px', width: 'auto' }} />
-            <div>
+            <img src={logo} alt="Patrimonium" style={{ height: '32px', width: 'auto', flexShrink: 0 }} className="md:!h-[40px]" />
+            <div style={{ minWidth: 0 }}>
               <div style={{
-                fontSize: '1.3rem',
                 fontWeight: 900,
-                letterSpacing: '0.15em',
+                letterSpacing: '0.1em',
                 color: '#fff',
                 lineHeight: 1,
-              }}>
-                IRIS <span style={{ color: '#8b2323' }}>COCKPIT DE EVENTOS REAL TIME</span>
+              }} className="text-[0.7rem] md:text-[1.3rem]">
+                IRIS <span style={{ color: '#8b2323' }}>COCKPIT</span>
+                <span style={{ color: '#8b2323' }} className="hidden sm:inline"> DE EVENTOS REAL TIME</span>
               </div>
               <div style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '0.55rem',
                 color: 'rgba(255,255,255,0.25)',
                 letterSpacing: '0.2em',
-              }}>
+              }} className="hidden sm:block">
                 MONITORAMENTO TÁTICO 24H
               </div>
             </div>
           </div>
 
           {/* User info + logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+            <div style={{ textAlign: 'right' }} className="hidden sm:block">
               <div style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '0.7rem',
@@ -168,14 +171,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <button
               onClick={handleLogout}
               style={{
-                padding: '0.5rem',
+                padding: '0.625rem',
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
+                minWidth: '44px',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 color: 'rgba(255,255,255,0.4)',
                 transition: 'all 0.2s',
-                display: 'flex',
               }}
               onMouseEnter={e => {
                 (e.currentTarget as HTMLButtonElement).style.color = '#8b2323';
@@ -191,6 +198,50 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             </button>
           </div>
         </div>
+
+        {/* Admin nav bar */}
+        {isAdmin && user && (
+          <div style={{
+            maxWidth: '82rem',
+            margin: '0 auto',
+            padding: '0 1.5rem',
+            display: 'flex',
+            gap: '0.5rem',
+            paddingBottom: '0.5rem',
+          }}>
+            <button
+              onClick={() => navigate('/usuarios')}
+              style={{
+                padding: '0.375rem 0.75rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.2s',
+                minHeight: '36px',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = '#8b2323';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(139,35,35,0.3)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+              }}
+            >
+              <Users style={{ width: '12px', height: '12px' }} /> Gerenciar Operadores
+            </button>
+          </div>
+        )}
 
         {/* Bottom accent line */}
         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,35,35,0.4), transparent)' }} />
@@ -238,6 +289,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/disparo/:id" element={<RequireAuth><DetalhesDisparo /></RequireAuth>} />
+          <Route path="/usuarios" element={<RequireAuth><Usuarios /></RequireAuth>} />
         </Routes>
       </Layout>
       <Toaster position="top-right" toastOptions={{

@@ -87,5 +87,45 @@ export const api = {
 
         if (error) throw error;
         return true;
-    }
+    },
+
+    // === GESTÃO DE USUÁRIOS (Admin) ===
+
+    listUsuarios: async () => {
+        const { data, error } = await supabase
+            .from('iris_usuarios')
+            .select('*')
+            .order('criado_em', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    criarUsuario: async (params: { email: string; password: string; nome_completo: string; cargo: string }) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Sessão expirada');
+
+        const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/criar-usuario`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify(params),
+            }
+        );
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Erro ao criar usuário');
+        return body;
+    },
+
+    toggleUsuarioAtivo: async (id: string, ativo: boolean) => {
+        const { error } = await supabase
+            .from('iris_usuarios')
+            .update({ ativo, atualizado_em: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+        return true;
+    },
 };

@@ -71,10 +71,10 @@ export const DetalhesDisparo = () => {
     if (!pendencia) return <div className="p-12 text-center text-red-400">Pendência não encontrada.</div>;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-8 animate-in fade-in duration-500">
             <button
                 onClick={() => navigate('/')}
-                className="text-slate-500 hover:text-brand-red flex items-center gap-2 transition-all font-bold uppercase tracking-widest text-[10px] group"
+                className="text-slate-500 hover:text-brand-red flex items-center gap-2 transition-all font-bold uppercase tracking-widest text-[10px] group min-h-[44px]"
             >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Voltar ao Terminal
             </button>
@@ -83,9 +83,9 @@ export const DetalhesDisparo = () => {
 
                 {/* COLUNA ESQUERDA - DADOS DO EVENTO */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="glass-card p-8 shadow-xl relative overflow-hidden">
+                    <div className="glass-card p-5 md:p-8 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-brand-red/5 blur-2xl rounded-full opacity-50" />
-                        <h2 className="text-xl font-black text-white mb-8 flex items-center gap-3 italic">
+                        <h2 className="text-lg md:text-xl font-black text-white mb-5 md:mb-8 flex items-center gap-3 italic">
                             <Crosshair className="w-6 h-6 text-brand-red not-italic" /> EVENTO <span className="text-brand-red not-italic">REAL-TIME</span>
                         </h2>
 
@@ -163,9 +163,9 @@ export const DetalhesDisparo = () => {
 
                 {/* COLUNA DIREITA - ANÁLISE DE IA */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="glass-card p-8 shadow-xl h-full flex flex-col relative overflow-hidden">
+                    <div className="glass-card p-5 md:p-8 shadow-xl h-full flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full opacity-30" />
-                        <div className="flex items-center justify-between mb-8 relative z-10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 md:mb-8 gap-3 relative z-10">
                             <h2 className="text-xl font-black text-white flex items-center gap-3 italic uppercase">
                                 <BrainCircuit className="w-8 h-8 text-purple-500 not-italic" /> IA <span className="text-purple-500 not-italic">AUDIT</span>
                             </h2>
@@ -184,7 +184,7 @@ export const DetalhesDisparo = () => {
                                 <p className="text-slate-500 mb-8 max-w-sm font-medium text-sm">O motor de inferência IRIS aguarda instrução para auditoria automatizada deste disparo.</p>
                                 <button
                                     onClick={handleAnalise}
-                                    className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 relative overflow-hidden group/btn"
+                                    className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 relative overflow-hidden group/btn min-h-[48px]"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
                                     <BrainCircuit className="w-5 h-5" /> Iniciar Auditoria IA
