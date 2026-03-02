@@ -58,24 +58,33 @@ export const api = {
     },
 
     // Webhook n8n para pedir análise via IA
-    solicitarAnalise: async (id_disparo: string) => {
-        // URL do Webhook do Workflow 2 do n8n (Mockada para este MVP Front-end)
-        const n8nWebhookUrl = import.meta.env.VITE_N8N_ANALYSE_WEBHOOK_URL;
+    // Usa Supabase RPC → pg_net para fazer o POST ao N8N diretamente do servidor do banco.
+    // Zero CORS, zero proxy. Funciona em qualquer ambiente.
+    solicitarAnalise: async (pendencia: Pendencia) => {
+        const payload = {
+            id_disparo: pendencia.id_disparo,
+            evento_codigo: pendencia.evento_codigo,
+            descricao: pendencia.descricao_catalogo || pendencia.desc_evento || pendencia.agrupamento || "Disparo de alarme",
+            prioridade: pendencia.prioridade,
+            plano: pendencia.plano_extraido || "BÁSICO",
+            cliente: pendencia.nome,
+            patrimonio: pendencia.patrimonio,
+            operador_solicitante: 'operador_logado'
+        };
 
-        if (!n8nWebhookUrl) {
-            console.warn("Webhook n8n URL não configurada. Usando mock.");
-            await new Promise(r => setTimeout(r, 2000));
-            return { status: "mock_success" };
-        }
+        console.log('[IRIS] Disparando análise via Supabase RPC para id:', pendencia.id_disparo);
 
-        const response = await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_disparo, operador_solicitante: 'operador_logado' })
+        const { error } = await supabase.rpc('solicitar_analise_ia', {
+            payload: payload
         });
 
-        if (!response.ok) throw new Error('Falha ao comunicar com o agente de IA.');
-        return await response.json();
+        if (error) {
+            console.error('[IRIS] Erro no RPC:', error);
+            throw error;
+        }
+
+        console.log('[IRIS] RPC executado com sucesso - N8N vai processar');
+        return { status: "dispatched" };
     },
 
     // Ação em massa para limpar a fila

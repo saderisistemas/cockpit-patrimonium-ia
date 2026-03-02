@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, AlertTriangle, ShieldAlert, BadgeInfo, Activity, Search, Trash2 } from 'lucide-react';
+import { Eye, Activity, ShieldAlert, Search, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Pendencia } from '../lib/api';
 import { useUserRole } from '../hooks/useUserRole';
+import { getPriorityConfig } from '../lib/priorityConfig';
 
 export const Dashboard = () => {
     const [pendencias, setPendencias] = useState<Pendencia[]>([]);
@@ -16,6 +17,7 @@ export const Dashboard = () => {
     const isRelevantEvent = (pend: Pendencia) => {
         const prioValue = Number(pend.prioridade);
         if (pend.evento_codigo === '9704') return true;
+        if (pend.evento_codigo === '9065') return true;
         if (pend.evento_codigo?.startsWith('901')) return true;
         if (pend.evento_codigo?.startsWith('E35')) return true;
         if ([0, 1, 4, 5].includes(prioValue)) return true;
@@ -59,11 +61,7 @@ export const Dashboard = () => {
         };
     }, []);
 
-    const getPriorityConfig = (pri: number | null) => {
-        if (pri === 1) return { color: 'bg-red-500/20 text-red-500 border-red-500/30', icon: ShieldAlert, label: 'Crítica' };
-        if (pri === 2) return { color: 'bg-orange-500/20 text-orange-500 border-orange-500/30', icon: AlertTriangle, label: 'Alta' };
-        return { color: 'bg-blue-500/20 text-blue-500 border-blue-500/30', icon: BadgeInfo, label: 'Normal' };
-    };
+    // Puxado remotamente de lib
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-10">
@@ -198,6 +196,7 @@ export const Dashboard = () => {
                                             let badgeColor = 'bg-slate-500 text-white';
                                             let prioLabel = prio.label;
                                             if (pend.evento_codigo === '9704') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                            else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                             else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                             else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
                                             else if (prioValue === 0 || prioValue === 1) { borderColor = 'border-[#ff0000]'; badgeColor = 'bg-[#ff0000] text-white shadow-[0_0_15px_rgba(255,0,0,0.4)]'; }
@@ -261,6 +260,7 @@ export const Dashboard = () => {
                                     let badgeColor = 'bg-slate-500 text-white';
                                     let prioLabel = prio.label;
                                     if (pend.evento_codigo === '9704') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                    else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                     else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                     else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
                                     else if (prioValue === 0 || prioValue === 1) { borderColor = 'border-[#ff0000]'; badgeColor = 'bg-[#ff0000] text-white shadow-[0_0_15px_rgba(255,0,0,0.4)]'; }

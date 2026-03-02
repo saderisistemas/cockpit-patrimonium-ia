@@ -36,6 +36,7 @@ export interface Database {
                     atender_ate: string | null;
                     operador_disparo: string | null;
                     plano_extraido: string | null;
+                    descricao_catalogo: string | null;
                 };
                 Insert: {
                     id_disparo: string;

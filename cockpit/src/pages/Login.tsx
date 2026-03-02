@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.png';
@@ -265,6 +265,44 @@ export const Login = () => {
                         PATRIMONIUM SEGURANÇA 24H<br />
                         <span style={{ color: 'rgba(255,255,255,0.08)' }}>Acesso restrito a operadores autorizados</span>
                     </div>
+
+                    {/* TV Cockpit link */}
+                    <Link
+                        to="/tv"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            marginTop: '1.25rem',
+                            padding: '0.6rem 1rem',
+                            background: 'rgba(168,85,247,0.05)',
+                            border: '1px solid rgba(168,85,247,0.15)',
+                            borderRadius: '4px',
+                            color: 'rgba(168,85,247,0.6)',
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: '0.6rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.2em',
+                            textTransform: 'uppercase' as const,
+                            textDecoration: 'none',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer',
+                        }}
+                        onMouseEnter={e => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(168,85,247,0.1)';
+                            (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(168,85,247,0.3)';
+                            (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(168,85,247,0.9)';
+                        }}
+                        onMouseLeave={e => {
+                            (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(168,85,247,0.05)';
+                            (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(168,85,247,0.15)';
+                            (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(168,85,247,0.6)';
+                        }}
+                    >
+                        <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        Abrir Modo TV — Central
+                    </Link>
                 </form>
 
                 {/* Bottom accent stripe */}

@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { DetalhesDisparo } from './pages/DetalheDisparo';
 import { Login } from './pages/Login';
 import Usuarios from './pages/Usuarios';
+import { TVCockpit } from './pages/TVCockpit';
 import { LogOut, Users } from 'lucide-react';
 import { useUserRole } from './hooks/useUserRole';
 import logo from './assets/logo.png';
@@ -199,8 +200,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
 
-        {/* Admin nav bar */}
-        {isAdmin && user && (
+        {/* Nav bar */}
+        {user && (
           <div style={{
             maxWidth: '82rem',
             margin: '0 auto',
@@ -209,15 +210,48 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             gap: '0.5rem',
             paddingBottom: '0.5rem',
           }}>
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/usuarios')}
+                style={{
+                  padding: '0.375rem 0.75rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase' as const,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: 'all 0.2s',
+                  minHeight: '36px',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = '#8b2323';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(139,35,35,0.3)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                }}
+              >
+                <Users style={{ width: '12px', height: '12px' }} /> Gerenciar Operadores
+              </button>
+            )}
             <button
-              onClick={() => navigate('/usuarios')}
+              onClick={() => window.open('/tv', '_blank')}
               style={{
                 padding: '0.375rem 0.75rem',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(168,85,247,0.05)',
+                border: '1px solid rgba(168,85,247,0.15)',
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
-                color: 'rgba(255,255,255,0.5)',
+                color: 'rgba(168,85,247,0.6)',
                 fontSize: '0.65rem',
                 fontWeight: 800,
                 letterSpacing: '0.15em',
@@ -230,15 +264,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 minHeight: '36px',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = '#8b2323';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(139,35,35,0.3)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(168,85,247,0.9)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(168,85,247,0.3)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(168,85,247,0.1)';
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)';
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(168,85,247,0.6)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(168,85,247,0.15)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(168,85,247,0.05)';
               }}
             >
-              <Users style={{ width: '12px', height: '12px' }} /> Gerenciar Operadores
+              <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              Modo TV
             </button>
           </div>
         )}
@@ -284,14 +321,21 @@ const RequireAuth = ({ children }: { children: React.ReactElement }) => {
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/disparo/:id" element={<RequireAuth><DetalhesDisparo /></RequireAuth>} />
-          <Route path="/usuarios" element={<RequireAuth><Usuarios /></RequireAuth>} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* TV Cockpit — fullscreen, sem layout */}
+        <Route path="/tv" element={<TVCockpit />} />
+        {/* App normal com Layout */}
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+              <Route path="/disparo/:id" element={<RequireAuth><DetalhesDisparo /></RequireAuth>} />
+              <Route path="/usuarios" element={<RequireAuth><Usuarios /></RequireAuth>} />
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
       <Toaster position="top-right" toastOptions={{
         style: {
           background: '#111',
