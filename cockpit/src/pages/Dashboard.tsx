@@ -172,7 +172,7 @@ export const Dashboard = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                activePendencias
+                                [...activePendencias]
                                     .sort((a, b) => {
                                         // Sort newest first by date and time
                                         const dateA = new Date(`${a.data_evento}T${a.hora_evento}`);
