@@ -25,10 +25,17 @@ export interface Database {
                     data_evento: string;
                     hora_evento: string;
                     particao: string | null;
-                    prioridade: number | null;
+                    prioridade: string | null;
                     capturado_em: string | null;
                     status: string | null;
                     agrupamento: string | null;
+                    permite_retardo: boolean | null;
+                    pode_retardar: boolean | null;
+                    tem_camera: boolean | null;
+                    contagem: number | null;
+                    atender_ate: string | null;
+                    operador_disparo: string | null;
+                    plano_extraido: string | null;
                 };
                 Insert: {
                     id_disparo: string;
@@ -40,7 +47,7 @@ export interface Database {
                     data_evento: string;
                     hora_evento: string;
                     particao?: string | null;
-                    prioridade?: number | null;
+                    prioridade?: string | null;
                     capturado_em?: string | null;
                     status?: string | null;
                     agrupamento?: string | null;
@@ -60,7 +67,7 @@ export interface Database {
                     data_evento?: string;
                     hora_evento?: string;
                     particao?: string | null;
-                    prioridade?: number | null;
+                    prioridade?: string | null;
                     capturado_em?: string | null;
                     status?: string | null;
                     agrupamento?: string | null;
@@ -77,6 +84,8 @@ export interface Database {
                     agrupamento: string | null;
                     analisado_em: string | null;
                     operador_solicitante: string | null;
+                    plano_utilizado: string | null;
+                    evento_enriquecido: Json | null;
                 };
                 Insert: {
                     id_analise?: string;
@@ -99,6 +108,8 @@ export interface Database {
                     agrupamento?: string | null;
                     analisado_em?: string | null;
                     operador_solicitante?: string | null;
+                    plano_utilizado?: string | null;
+                    evento_enriquecido?: Json | null;
                 };
             };
         };

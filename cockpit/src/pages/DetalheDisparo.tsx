@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { Pendencia, Analise } from '../lib/api';
-import { ShieldCheck, Crosshair, BrainCircuit, Loader2, ArrowLeft, Clock, MapPin, Building2, Activity } from 'lucide-react';
+import { ShieldCheck, Crosshair, BrainCircuit, Loader2, ArrowLeft, Clock, MapPin, Building2, Activity, Camera, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const DetalhesDisparo = () => {
@@ -46,6 +46,27 @@ export const DetalhesDisparo = () => {
         }
     };
 
+    const getPlanoLabel = (patrimonio: string | null): { code: string; label: string; color: string } => {
+        if (!patrimonio || patrimonio.length !== 5 || !patrimonio.startsWith('1')) return { code: '?', label: 'Desconhecido', color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' };
+        const digit = patrimonio.charAt(1);
+        const planos: Record<string, { label: string; color: string }> = {
+            '0': { label: 'Tático Visualização', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+            '1': { label: 'Smart (Lab)', color: 'text-slate-300 bg-slate-500/10 border-slate-500/20' },
+            '2': { label: 'Bronze', color: 'text-amber-600 bg-amber-600/10 border-amber-600/20' },
+            '3': { label: 'Prata', color: 'text-slate-300 bg-slate-300/10 border-slate-300/20' },
+            '4': { label: 'Ouro', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
+            '5': { label: 'Premium', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+            '6': { label: 'Disparo por Imagem', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+            '7': { label: 'Analítico CFTV', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+            '8': { label: 'Analítico Plus', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+            '9': { label: 'Mobile', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+        };
+        const info = planos[digit] || { label: 'Desconhecido', color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' };
+        return { code: digit + '000', ...info };
+    };
+
+    const planoInfo = pendencia ? getPlanoLabel(pendencia.patrimonio) : null;
+
     if (loading) return <div className="p-12 text-center text-slate-400">Carregando dados estruturados...</div>;
     if (!pendencia) return <div className="p-12 text-center text-red-400">Pendência não encontrada.</div>;
 
@@ -63,7 +84,7 @@ export const DetalhesDisparo = () => {
                 {/* COLUNA ESQUERDA - DADOS DO EVENTO */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="glass-card p-8 shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-brand-red/5 blur-2xl rounded-full" />
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-brand-red/5 blur-2xl rounded-full opacity-50" />
                         <h2 className="text-xl font-black text-white mb-8 flex items-center gap-3 italic">
                             <Crosshair className="w-6 h-6 text-brand-red not-italic" /> EVENTO <span className="text-brand-red not-italic">REAL-TIME</span>
                         </h2>
@@ -99,8 +120,25 @@ export const DetalhesDisparo = () => {
                             <div>
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> Local / Patrimônio</p>
                                 <p className="text-slate-300 text-sm font-medium">{pendencia.endereco}</p>
-                                <p className="text-brand-red text-[10px] font-black uppercase tracking-widest mt-1 bg-brand-red/5 px-2 py-1 rounded inline-block">{pendencia.patrimonio}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-brand-red text-[10px] font-black uppercase tracking-widest bg-brand-red/5 px-2 py-1 rounded inline-block">{pendencia.patrimonio}</span>
+                                    {pendencia.tem_camera && (
+                                        <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded inline-flex items-center gap-1 border border-emerald-500/20">
+                                            <Camera className="w-3 h-3" /> CFTV
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+
+                            {planoInfo && (
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-1"><Tag className="w-3 h-3" /> Plano Contratado</p>
+                                    <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-black ${planoInfo.color}`}>
+                                        <span className="font-mono">{planoInfo.code}</span>
+                                        <span className="text-[10px] uppercase tracking-widest">{planoInfo.label}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="bg-gradient-to-br from-brand-red/20 to-brand-dark border border-brand-red/30 rounded-2xl p-5 relative overflow-hidden group">
                                 <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -126,7 +164,7 @@ export const DetalhesDisparo = () => {
                 {/* COLUNA DIREITA - ANÁLISE DE IA */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="glass-card p-8 shadow-xl h-full flex flex-col relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full opacity-30" />
                         <div className="flex items-center justify-between mb-8 relative z-10">
                             <h2 className="text-xl font-black text-white flex items-center gap-3 italic uppercase">
                                 <BrainCircuit className="w-8 h-8 text-purple-500 not-italic" /> IA <span className="text-purple-500 not-italic">AUDIT</span>
@@ -177,6 +215,11 @@ export const DetalhesDisparo = () => {
                                     <div>
                                         <h3 className="font-black text-white uppercase tracking-widest italic text-sm">Score de Risco</h3>
                                         <p className="text-sm text-slate-500 font-medium max-w-xs mt-1">Nível de criticidade calculado via algoritmos de Processamento de Linguagem Natural (LLM).</p>
+                                        {analise.plano_utilizado && (
+                                            <p className="text-[10px] font-bold text-purple-400 mt-2 uppercase tracking-widest">
+                                                Agente: Plano {analise.plano_utilizado}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
