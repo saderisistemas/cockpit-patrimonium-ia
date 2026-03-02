@@ -1,0 +1,9 @@
+[build]
+  base = "cockpit"
+  command = "npm run build"
+  publish = "cockpit/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
