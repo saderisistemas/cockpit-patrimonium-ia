@@ -189,11 +189,10 @@ export const DetalhesDisparo = () => {
                                     <Activity className="w-24 h-24" />
                                 </div>
                                 <p className="text-[10px] font-black text-brand-red uppercase tracking-[0.2em] mb-2">Código do Evento</p>
-                                <p className="text-white font-black text-2xl italic">{pendencia.evento_codigo} {pendencia.desc_evento ? `- ${pendencia.desc_evento}` : ''}</p>
+                                <p className="text-white font-black text-2xl italic">{pendencia.evento_codigo} {(pendencia.descricao_catalogo || pendencia.desc_evento) ? `- ${pendencia.descricao_catalogo || pendencia.desc_evento}` : ''}</p>
                                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
-                                    {pendencia.agrupamento} • PART-{pendencia.particao}
-                                    {pendencia.zona ? ` • ZONA ${pendencia.zona}` : ''}
-                                    {pendencia.setor ? ` • SETOR ${pendencia.setor}` : ''}
+                                    {pendencia.agrupamento} • Zona: {pendencia.zona || pendencia.particao || '--'}
+                                    {pendencia.setor ? ` • Setor ${pendencia.setor}` : ''}
                                 </p>
                                 {pendencia.viatura && (
                                     <div className="mt-3 inline-block px-3 py-1 bg-amber-500/20 text-amber-500 text-[10px] font-black tracking-widest uppercase rounded border border-amber-500/30">

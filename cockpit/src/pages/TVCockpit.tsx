@@ -42,7 +42,7 @@ const formatDate = (isoString: string) => {
     return new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'agrupamento' | 'prioridade'>;
+type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'descricao_catalogo' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'zona' | 'agrupamento' | 'prioridade'>;
 
 export const TVCockpit = () => {
     const [analises, setAnalises] = useState<(AnaliseTV & { pendencia?: PendenciaSimples })[]>([]);
@@ -70,7 +70,7 @@ export const TVCockpit = () => {
             data.map(async (analise: AnaliseTV) => {
                 const { data: pend } = await supabase
                     .from('iris_pendencias')
-                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, hora_evento, data_evento, setor, viatura, particao, agrupamento, prioridade')
+                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade')
                     .eq('id_disparo', analise.id_disparo)
                     .maybeSingle();
                 return { ...analise, pendencia: pend || undefined };
@@ -242,7 +242,10 @@ export const TVCockpit = () => {
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.evento_codigo || "---"}</span>
-                                            <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{latest.pendencia?.desc_evento || "Processando Descrição..."}</span>
+                                            <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{latest.pendencia?.descricao_catalogo || latest.pendencia?.desc_evento || "Processando Descrição..."}</span>
+                                            {(latest.pendencia?.zona || latest.pendencia?.particao) && (
+                                                <span className="text-lg font-mono text-white/40 mt-1 bg-white/5 px-3 py-0.5 rounded-lg border border-white/10">Zona: {latest.pendencia.zona || latest.pendencia.particao}</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -328,7 +331,8 @@ export const TVCockpit = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className={`text-lg font-black truncate ${historyColors.textColor}`}>
                                                 {a.pendencia?.evento_codigo || a.id_disparo.slice(0, 12)}
-                                                <span className="text-white/60 font-bold ml-2"> — {a.pendencia?.desc_evento}</span>
+                                                {(a.pendencia?.zona || a.pendencia?.particao) && <span className="text-white/30 font-mono text-sm ml-1">[Z:{a.pendencia.zona || a.pendencia.particao}]</span>}
+                                                <span className="text-white/60 font-bold ml-2"> — {a.pendencia?.descricao_catalogo || a.pendencia?.desc_evento}</span>
                                             </div>
                                             <div className="text-sm text-white/50 font-bold truncate mt-0.5">{a.pendencia?.nome}</div>
                                             <div className="text-xs text-white/20 font-mono mt-1">{formatTime(a.criado_em)}</div>

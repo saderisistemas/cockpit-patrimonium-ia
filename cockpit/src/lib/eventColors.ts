@@ -48,6 +48,26 @@ export function getEventColors(evento_codigo?: string, prioridade?: string | num
         };
     }
 
+    // 3907, 1804, 3904 -> Analítico (Branco)
+    if (evento_codigo === '3907' || evento_codigo === '1804' || evento_codigo === '3904') {
+        return {
+            borderColor: 'border-white/50',
+            bgColor: 'bg-white/5',
+            textColor: 'text-white',
+            shadowColor: 'shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+        };
+    }
+
+    // E306 -> Técnico no Local (Cinza padrão)
+    if (evento_codigo === 'E306') {
+        return {
+            borderColor: 'border-slate-500',
+            bgColor: 'bg-slate-500/10',
+            textColor: 'text-slate-400',
+            shadowColor: 'shadow-[0_0_15px_rgba(100,116,139,0.3)]'
+        };
+    }
+
     // E130 ou Prioridades Intrusão (0, 1) -> Crítico (Vermelho)
     if (evento_codigo === 'E130' || prioValue === 0 || prioValue === 1) {
         return {

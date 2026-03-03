@@ -58,8 +58,8 @@ export const api = {
     },
 
     // Webhook n8n para pedir análise via IA
-    // Usa Supabase RPC → pg_net para fazer o POST ao N8N diretamente do servidor do banco.
-    // Zero CORS, zero proxy. Funciona em qualquer ambiente.
+    // POST direto ao webhook do N8N via proxy Vite (dev) / Netlify (prod).
+    // O proxy encaminha /webhook/* → https://patrimonium-n8n.cloudfy.live/webhook/*
     solicitarAnalise: async (pendencia: Pendencia) => {
         const payload = {
             id_disparo: pendencia.id_disparo,
@@ -72,18 +72,21 @@ export const api = {
             operador_solicitante: 'operador_logado'
         };
 
-        console.log('[IRIS] Disparando análise via Supabase RPC para id:', pendencia.id_disparo);
+        console.log('[IRIS] Disparando análise via webhook N8N para id:', pendencia.id_disparo);
 
-        const { error } = await supabase.rpc('solicitar_analise_ia', {
-            payload: payload
+        const response = await fetch('/webhook/iris-analisar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
 
-        if (error) {
-            console.error('[IRIS] Erro no RPC:', error);
-            throw error;
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            console.error('[IRIS] Erro no webhook:', response.status, text);
+            throw new Error(`Webhook retornou ${response.status}: ${text}`);
         }
 
-        console.log('[IRIS] RPC executado com sucesso - N8N vai processar');
+        console.log('[IRIS] Webhook disparado com sucesso - N8N vai processar');
         return { status: "dispatched" };
     },
 

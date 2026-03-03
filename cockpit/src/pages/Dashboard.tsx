@@ -219,8 +219,8 @@ export const Dashboard = () => {
                                                         <div className="text-[10px] opacity-70 font-medium">Cod: {pend.id_cliente}</div>
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <div className="font-bold">{pend.evento_codigo} {pend.desc_evento ? `- ${pend.desc_evento}` : ''}</div>
-                                                        <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">Zona: {pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}</div>
+                                                        <div className="font-bold">{pend.evento_codigo} {(pend.descricao_catalogo || pend.desc_evento) ? `- ${pend.descricao_catalogo || pend.desc_evento}` : ''}</div>
+                                                        <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
                                                         <button onClick={() => navigate(`/disparo/${pend.id_disparo}`)} className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-brand-red text-white text-[10px] font-black uppercase tracking-[0.1em] rounded-lg transition-all duration-300 group/btn border border-white/10 hover:border-brand-red hover:shadow-xl hover:shadow-brand-red/20 min-h-[44px]">
@@ -280,8 +280,8 @@ export const Dashboard = () => {
                                             </div>
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-slate-400 truncate">{pend.evento_codigo} {pend.desc_evento ? `- ${pend.desc_evento}` : ''}</div>
-                                                    <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Zona: {pend.particao || '--'}</div>
+                                                    <div className="text-xs font-bold text-slate-400 truncate">{pend.evento_codigo} {(pend.descricao_catalogo || pend.desc_evento) ? `- ${pend.descricao_catalogo || pend.desc_evento}` : ''}</div>
+                                                    <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'}</div>
                                                 </div>
                                                 <button
                                                     onClick={() => navigate(`/disparo/${pend.id_disparo}`)}
