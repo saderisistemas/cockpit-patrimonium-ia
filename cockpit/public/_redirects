@@ -1,1 +1,2 @@
+/webhook/*  https://patrimonium-n8n.cloudfy.live/webhook/:splat  200!
 /*    /index.html   200
