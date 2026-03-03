@@ -3,6 +3,14 @@
   command = "npm run build"
   publish = "cockpit/dist"
 
+# Proxy para o webhook do n8n (evita CORS) — DEVE vir ANTES do catch-all
+[[redirects]]
+  from = "/webhook/*"
+  to = "https://patrimonium-n8n.cloudfy.live/webhook/:splat"
+  status = 200
+  force = true
+
+# SPA catch-all — deve ser o ÚLTIMO redirect
 [[redirects]]
   from = "/*"
   to = "/index.html"
