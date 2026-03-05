@@ -1,12 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Activity, ChevronLeft, MapPin, BrainCircuit, History, Loader2, Building2, Crosshair, Tag } from 'lucide-react';
+import { ShieldCheck, Activity, ChevronLeft, MapPin, BrainCircuit, History, Loader2, Building2, Crosshair, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Pendencia, Analise } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { getPriorityConfig } from '../lib/priorityConfig';
 import { getEventColors } from '../lib/eventColors';
 import toast from 'react-hot-toast';
+
+// Helper para traduzir clima
+const getWeatherDisplay = (clima: any) => {
+    if (!clima || typeof clima !== 'object' || clima.code === undefined || clima.code === null) return null;
+    const code = clima.code;
+    let Icon = Cloud;
+    let color = "text-slate-400";
+    let anim = "animate-pulse";
+    let desc = "Nublado";
+
+    if (code === 0) { Icon = Sun; color = "text-yellow-400"; anim = "animate-[spin_8s_linear_infinite]"; desc = "Céu Limpo"; }
+    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-slate-300"; anim = "animate-pulse"; desc = "Parc. Nublado"; }
+    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-400"; anim = "animate-pulse"; desc = "Nevoeiro"; }
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; anim = "animate-bounce"; desc = "Chuva"; }
+    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-sky-200"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
+    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-purple-400"; anim = "animate-pulse"; desc = "Tempestade"; }
+
+    return { Icon, color, anim, desc, temp: clima.temp };
+};
 
 export const DetalhesDisparo = () => {
     const { id } = useParams<{ id: string }>();
@@ -261,6 +280,28 @@ export const DetalhesDisparo = () => {
                                                 Agente: Plano {analise.plano_utilizado}
                                             </p>
                                         )}
+                                    </div>
+                                    <div className="ml-auto flex items-center justify-end">
+                                        {/* INÍCIO INFORMAÇÃO DO CLIMA */}
+                                        {(() => {
+                                            // The payload for the AI might not be fully structured identically to TVCockpit, but it resides in analise.evento_enriquecido?.clima or analise.evidencias
+                                            const climaInfo = typeof analise.evento_enriquecido === 'object' ? (analise.evento_enriquecido as any)?.clima : undefined;
+                                            const weather = getWeatherDisplay(climaInfo);
+                                            if (weather) {
+                                                const { Icon, color, anim, desc, temp } = weather;
+                                                return (
+                                                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md shadow-inner">
+                                                        <Icon className={`w-8 h-8 ${color} ${anim}`} />
+                                                        <div className="flex flex-col items-start leading-none">
+                                                            <span className="text-lg font-black text-white">{temp}°C</span>
+                                                            <span className={`text-xs font-bold uppercase tracking-widest ${color}`}>{desc}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+                                        {/* FIM INFORMAÇÃO DO CLIMA */}
                                     </div>
                                 </div>
 
