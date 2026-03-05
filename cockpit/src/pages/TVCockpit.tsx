@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag } from 'lucide-react';
+import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog } from 'lucide-react';
 import logo from '../assets/logo.png';
 import type { Pendencia } from '../lib/api';
 import { getEventColors } from '../lib/eventColors';
@@ -15,7 +15,27 @@ interface AnaliseTV {
     evidencias: any;
     criado_em: string;
     plano_utilizado: string;
+    evento_enriquecido?: any;
 }
+
+// Helper para traduzir clima
+const getWeatherDisplay = (clima: any) => {
+    if (!clima || typeof clima !== 'object' || clima.code === undefined || clima.code === null) return null;
+    const code = clima.code;
+    let Icon = Cloud;
+    let color = "text-slate-400";
+    let anim = "animate-pulse";
+    let desc = "Nublado";
+
+    if (code === 0) { Icon = Sun; color = "text-yellow-400"; anim = "animate-[spin_8s_linear_infinite]"; desc = "Céu Limpo"; }
+    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-slate-300"; anim = "animate-pulse"; desc = "Parc. Nublado"; }
+    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-400"; anim = "animate-pulse"; desc = "Nevoeiro"; }
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; anim = "animate-bounce"; desc = "Chuva"; }
+    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-sky-200"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
+    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-purple-400"; anim = "animate-pulse"; desc = "Tempestade"; }
+
+    return { Icon, color, anim, desc, temp: clima.temp };
+};
 
 // Helper para traduzir o plano
 const getPlanoLabel = (plano: string) => {
@@ -242,7 +262,27 @@ export const TVCockpit = () => {
                                             <span className="text-2xl font-black uppercase tracking-[0.2em]">Evento Capturado</span>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.evento_codigo || "---"}</span>
+                                            <div className="flex items-center gap-4">
+                                                {/* INÍCIO INFORMAÇÃO DO CLIMA */}
+                                                {(() => {
+                                                    const weather = getWeatherDisplay(latest?.evento_enriquecido?.clima);
+                                                    if (weather) {
+                                                        const { Icon, color, anim, desc, temp } = weather;
+                                                        return (
+                                                            <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md shadow-inner mr-2">
+                                                                <Icon className={`w-8 h-8 ${color} ${anim}`} />
+                                                                <div className="flex flex-col items-start leading-none">
+                                                                    <span className="text-lg font-black text-white">{temp}°C</span>
+                                                                    <span className={`text-xs font-bold uppercase tracking-widest ${color}`}>{desc}</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                                {/* FIM INFORMAÇÃO DO CLIMA */}
+                                                <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.evento_codigo || "---"}</span>
+                                            </div>
                                             <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
                                             {(latest.pendencia?.zona || latest.pendencia?.particao) && (
                                                 <span className="text-lg font-mono text-white/40 mt-1 bg-white/5 px-3 py-0.5 rounded-lg border border-white/10">Zona: {latest.pendencia.zona || latest.pendencia.particao}</span>
@@ -276,7 +316,7 @@ export const TVCockpit = () => {
                                             )}
                                         </div>
                                         <div className={`text-2xl font-black ${colors.textColor} uppercase tracking-[0.2em] mb-4 drop-shadow-sm`}>Veredito da Inteligência Artificial</div>
-                                        <div className="text-white font-bold text-4xl leading-tight line-clamp-4 pr-40 drop-shadow-md">{latest.hipotese}</div>
+                                        <div className="text-white font-bold text-2xl leading-tight line-clamp-3 pr-40 drop-shadow-md">{latest.hipotese}</div>
                                     </div>
                                 </div>
 

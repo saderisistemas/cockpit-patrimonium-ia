@@ -28,13 +28,13 @@ export function getEventColors(evento_codigo?: string, prioridade?: string | num
         };
     }
 
-    // 9704 -> Energia (Laranja/Amarelo - Destacado)
-    if (evento_codigo === '9704') {
+    // 9704 ou E301 -> Energia (Preto)
+    if (evento_codigo === '9704' || evento_codigo === 'E301') {
         return {
-            borderColor: 'border-amber-500',
-            bgColor: 'bg-amber-500/10',
-            textColor: 'text-amber-500',
-            shadowColor: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+            borderColor: 'border-black',
+            bgColor: 'bg-black',
+            textColor: 'text-[#ff0000]',
+            shadowColor: 'shadow-[0_0_15px_rgba(255,0,0,0.4)]'
         };
     }
 

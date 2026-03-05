@@ -1,0 +1,18 @@
+{
+  "evento_enriquecido": {
+    "codigo": "E130",
+    "categoria": "ALARME_INTRUSAO",
+    "catalogado": true,
+    "descricao_iris": "Barreira Frente",
+    "requer_despacho": true,
+    "descricao_catalogo": "Disparo de Alarme",
+    "prioridade_catalogo": "2"
+  },
+  "evidencias": [
+    "Primeiro disparo do dia registrado na zona 006.",
+    "Histórico de falhas de comunicação recentes.",
+    "Plano 2000 prevê resposta tática imediata."
+  ],
+  "hipotese": "Primeiro disparo do dia na Barreira Frente, possível intrusão.",
+  "acao_recomendada": "CHECK: Primeiro disparo do dia na zona 006. | DEC: Deslocar Tático Imediato. | REC: Priorizar resposta. | REG: Registro de ação e monitoramento contínuo."
+}

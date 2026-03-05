@@ -1,0 +1,36 @@
+[
+  {
+    "parameters": {
+      "url": "=https://nominatim.openstreetmap.org/search?q={{encodeURIComponent($('Get Row Supabase').item.json.endereco)}}&format=json&limit=1",
+      "options": {
+        "headers": {
+          "User-Agent": "Agnte_Iris_IA/1.0"
+        }
+      }
+    },
+    "id": "uuid-geo-1772732306592",
+    "name": "Geocoding Nominatim",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.1,
+    "position": [
+      1240,
+      -144
+    ],
+    "alwaysOutputData": true
+  },
+  {
+    "parameters": {
+      "url": "=https://api.open-meteo.com/v1/forecast?latitude={{$json[0]?.lat || '-23.5505'}}&longitude={{$json[0]?.lon || '-46.6333'}}&current_weather=true",
+      "options": {}
+    },
+    "id": "uuid-weather-1772732306592",
+    "name": "Open-Meteo Weather",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.1,
+    "position": [
+      1440,
+      -144
+    ],
+    "alwaysOutputData": true
+  }
+]

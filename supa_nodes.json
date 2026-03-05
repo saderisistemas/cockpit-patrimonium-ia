@@ -1,0 +1,90 @@
+[
+  {
+    "tableId": "iris_analises",
+    "fieldsUi": {
+      "fieldValues": [
+        {
+          "fieldId": "id_disparo",
+          "fieldValue": "={{ $json.id_disparo }}"
+        },
+        {
+          "fieldId": "id_cliente",
+          "fieldValue": "={{ $json.id_cliente }}"
+        },
+        {
+          "fieldId": "score",
+          "fieldValue": "={{ $json.score }}"
+        },
+        {
+          "fieldId": "hipotese",
+          "fieldValue": "={{ $json.hipotese }}"
+        },
+        {
+          "fieldId": "acao_recomendada",
+          "fieldValue": "={{ $json.acao_recomendada }}"
+        },
+        {
+          "fieldId": "evidencias",
+          "fieldValue": "={{ $json.evidencias }}"
+        },
+        {
+          "fieldId": "plano_utilizado",
+          "fieldValue": "={{ $json.plano_utilizado }}"
+        },
+        {
+          "fieldId": "evento_enriquecido",
+          "fieldValue": "={{ $json.evento_enriquecido }}"
+        },
+        {
+          "fieldId": "operador_solicitante",
+          "fieldValue": "={{ $json.operador_solicitante }}"
+        }
+      ]
+    }
+  },
+  {
+    "operation": "update",
+    "tableId": "iris_analises",
+    "filters": {
+      "conditions": [
+        {
+          "keyName": "id_disparo",
+          "condition": "eq",
+          "keyValue": "={{ $json.id_disparo }}"
+        }
+      ]
+    },
+    "fieldsUi": {
+      "fieldValues": [
+        {
+          "fieldId": "score",
+          "fieldValue": "={{ $json.score }}"
+        },
+        {
+          "fieldId": "hipotese",
+          "fieldValue": "={{ $json.hipotese }}"
+        },
+        {
+          "fieldId": "acao_recomendada",
+          "fieldValue": "={{ $json.acao_recomendada }}"
+        },
+        {
+          "fieldId": "evidencias",
+          "fieldValue": "={{ $json.evidencias }}"
+        },
+        {
+          "fieldId": "plano_utilizado",
+          "fieldValue": "={{ $json.plano_utilizado }}"
+        },
+        {
+          "fieldId": "evento_enriquecido",
+          "fieldValue": "={{ $json.evento_enriquecido }}"
+        },
+        {
+          "fieldId": "operador_solicitante",
+          "fieldValue": "={{ $json.operador_solicitante }}"
+        }
+      ]
+    }
+  }
+]

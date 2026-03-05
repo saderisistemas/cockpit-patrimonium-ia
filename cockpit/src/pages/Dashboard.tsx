@@ -17,7 +17,7 @@ export const Dashboard = () => {
     // Filtro estrito para considerar apenas as prioridades visualizadas no painel Iris
     const isRelevantEvent = (pend: Pendencia) => {
         const prioValue = Number(pend.prioridade);
-        if (pend.evento_codigo === '9704') return true;
+        if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') return true;
         if (pend.evento_codigo === '9065') return true;
         if (pend.evento_codigo?.startsWith('901')) return true;
         if (pend.evento_codigo?.startsWith('E35')) return true;
@@ -120,7 +120,7 @@ export const Dashboard = () => {
                         <div>
                             <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Críticos</p>
                             <p className="text-2xl md:text-3xl font-black text-white tabular-nums">
-                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704').length}
+                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704' || p.evento_codigo === 'E301').length}
                             </p>
                         </div>
                     </div>
@@ -202,7 +202,7 @@ export const Dashboard = () => {
                                             let borderColor = 'border-slate-500';
                                             let badgeColor = 'bg-slate-500 text-white';
                                             let prioLabel = prio.label;
-                                            if (pend.evento_codigo === '9704') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                            if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
                                             else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                             else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                             else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
@@ -266,13 +266,13 @@ export const Dashboard = () => {
                                     let borderColor = 'border-slate-500';
                                     let badgeColor = 'bg-slate-500 text-white';
                                     let prioLabel = prio.label;
-                                    if (pend.evento_codigo === '9704') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                    if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
                                     else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                     else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                     else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
                                     else if (prioValue === 0 || prioValue === 1) { borderColor = 'border-[#ff0000]'; badgeColor = 'bg-[#ff0000] text-white shadow-[0_0_15px_rgba(255,0,0,0.4)]'; }
                                     else if (prioValue === 4) { borderColor = 'border-white'; badgeColor = 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]'; prioLabel = 'ANALÍTICOS'; }
-                                    else if (prioValue === 5) { borderColor = 'border-[#007aff]'; badgeColor = 'bg-[#007aff] text-white shadow-[0_0_15px_rgba(0,122,255,0.4)]'; }
+                                    else if (prioValue === 5) { borderColor = 'border-[#007aff]'; badgeColor = 'bg-[#007aff] text-white shadow-[0_0_15px_rgba(0,122,255,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
                                     return (
                                         <div key={pend.id_disparo} className={`p-4 border-l-[5px] ${borderColor} bg-black/20 active:bg-white/[0.05] transition-colors`}>
                                             <div className="flex items-start justify-between gap-3 mb-2">

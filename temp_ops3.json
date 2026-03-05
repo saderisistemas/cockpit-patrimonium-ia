@@ -1,0 +1,51 @@
+[
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 3000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 4000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 5000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 6000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 7000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 8000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  },
+  {
+    "type": "updateNode",
+    "nodeName": "Agente 9000",
+    "updates": {
+      "parameters.options.maxTokens": 400
+    }
+  }
+]
