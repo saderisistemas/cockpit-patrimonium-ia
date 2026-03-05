@@ -25,19 +25,21 @@ export default function Relatorios() {
     const navigate = useNavigate();
     const [period, setPeriod] = useState<number | { start: string, end: string }>(7);
     const [customDate, setCustomDate] = useState<{ start: string, end: string }>({ start: '', end: '' });
+    const [eventCodeFilter, setEventCodeFilter] = useState('');
+    const [appliedEventCode, setAppliedEventCode] = useState('');
     const [loading, setLoading] = useState(true);
     const [pendencias, setPendencias] = useState<any[]>([]);
     const [analises, setAnalises] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
-    }, [period]);
+    }, [period, appliedEventCode]);
 
     async function loadData() {
         setLoading(true);
         try {
             const [pend, anal] = await Promise.all([
-                api.fetchPendenciasReport(period),
+                api.fetchPendenciasReport(period, appliedEventCode),
                 api.fetchAnalisesReport(period),
             ]);
             setPendencias(pend);
@@ -145,7 +147,8 @@ export default function Relatorios() {
         .sort((a, b) => b[1].count - a[1].count);
 
 
-    const periodLabel = typeof period === 'number' ? `Últimos ${period} dias` : `${period.start} até ${period.end}`;
+    let periodLabel = typeof period === 'number' ? `Últimos ${period} dias` : `${period.start} até ${period.end}`;
+    if (appliedEventCode) periodLabel += ` | Codigo: ${appliedEventCode}`;
 
     const kpis = [
         { label: 'Total de Eventos', value: totalEvents.toLocaleString(), icon: BarChart3, color: COLORS.blue, sub: periodLabel, info: 'Soma total de todos os eventos recebidos no período.' },
@@ -228,25 +231,60 @@ export default function Relatorios() {
                             onChange={(e) => setCustomDate(prev => ({ ...prev, end: e.target.value }))}
                             style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', outline: 'none' }}
                         />
+                        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
+                        <input
+                            type="text"
+                            placeholder="Cód. Evento (ex: 8000)"
+                            value={eventCodeFilter}
+                            onChange={(e) => setEventCodeFilter(e.target.value)}
+                            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', outline: 'none', width: '130px' }}
+                        />
                         <button
-                            onClick={() => { if (customDate.start && customDate.end) setPeriod(customDate); }}
-                            disabled={!customDate.start || !customDate.end}
+                            onClick={() => {
+                                if (customDate.start && customDate.end) setPeriod(customDate);
+                                setAppliedEventCode(eventCodeFilter);
+                            }}
+                            disabled={!customDate.start && !customDate.end && !eventCodeFilter && typeof period === 'number' && !appliedEventCode}
                             style={{
                                 padding: '6px 12px',
                                 borderRadius: '6px',
-                                border: typeof period !== 'number' ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
-                                background: typeof period !== 'number' ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
-                                color: typeof period !== 'number' ? '#c4b5fd' : '#94a3b8',
-                                cursor: customDate.start && customDate.end ? 'pointer' : 'not-allowed',
-                                fontWeight: typeof period !== 'number' ? 600 : 400,
+                                border: '1px solid #8b5cf6',
+                                background: 'rgba(139,92,246,0.2)',
+                                color: '#c4b5fd',
+                                cursor: 'pointer',
+                                fontWeight: 600,
                                 fontSize: '12px',
                                 textTransform: 'uppercase',
-                                opacity: customDate.start && customDate.end ? 1 : 0.5,
                                 transition: 'all 0.2s',
                             }}
                         >
                             Filtrar
                         </button>
+                        {((typeof period !== 'number' && customDate.start) || appliedEventCode) && (
+                            <button
+                                onClick={() => {
+                                    setPeriod(7);
+                                    setCustomDate({ start: '', end: '' });
+                                    setEventCodeFilter('');
+                                    setAppliedEventCode('');
+                                }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    color: '#f87171',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '12px',
+                                    textTransform: 'uppercase',
+                                    transition: 'all 0.2s',
+                                    display: 'flex', alignItems: 'center', gap: '4px'
+                                }}
+                            >
+                                Limpar
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

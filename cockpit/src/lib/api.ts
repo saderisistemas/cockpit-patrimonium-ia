@@ -146,7 +146,7 @@ export const api = {
 
     // === RELATÓRIOS & KPIs ===
 
-    fetchPendenciasReport: async (period: number | { start: string, end: string } = 7) => {
+    fetchPendenciasReport: async (period: number | { start: string, end: string } = 7, eventCode?: string) => {
         let since = '';
         let until = '';
 
@@ -178,6 +178,10 @@ export const api = {
 
             if (until) {
                 query = query.lte('data_evento', until);
+            }
+
+            if (eventCode) {
+                query = query.eq('evento_codigo', eventCode);
             }
 
             const { data, error } = await query;
