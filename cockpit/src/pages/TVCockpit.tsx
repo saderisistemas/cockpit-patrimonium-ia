@@ -4,6 +4,7 @@ import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag } from '
 import logo from '../assets/logo.png';
 import type { Pendencia } from '../lib/api';
 import { getEventColors } from '../lib/eventColors';
+import { getEventDescription } from '../lib/eventUtils';
 
 interface AnaliseTV {
     id: string;
@@ -242,7 +243,7 @@ export const TVCockpit = () => {
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.evento_codigo || "---"}</span>
-                                            <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{latest.pendencia?.descricao_catalogo || latest.pendencia?.desc_evento || "Processando Descrição..."}</span>
+                                            <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
                                             {(latest.pendencia?.zona || latest.pendencia?.particao) && (
                                                 <span className="text-lg font-mono text-white/40 mt-1 bg-white/5 px-3 py-0.5 rounded-lg border border-white/10">Zona: {latest.pendencia.zona || latest.pendencia.particao}</span>
                                             )}
@@ -332,7 +333,7 @@ export const TVCockpit = () => {
                                             <div className={`text-lg font-black truncate ${historyColors.textColor}`}>
                                                 {a.pendencia?.evento_codigo || a.id_disparo.slice(0, 12)}
                                                 {(a.pendencia?.zona || a.pendencia?.particao) && <span className="text-white/30 font-mono text-sm ml-1">[Z:{a.pendencia.zona || a.pendencia.particao}]</span>}
-                                                <span className="text-white/60 font-bold ml-2"> — {a.pendencia?.descricao_catalogo || a.pendencia?.desc_evento}</span>
+                                                <span className="text-white/60 font-bold ml-2"> — {getEventDescription(a.pendencia?.evento_codigo, a.pendencia?.descricao_catalogo, a.pendencia?.desc_evento)}</span>
                                             </div>
                                             <div className="text-sm text-white/50 font-bold truncate mt-0.5">{a.pendencia?.nome}</div>
                                             <div className="text-xs text-white/20 font-mono mt-1">{formatTime(a.criado_em)}</div>

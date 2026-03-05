@@ -7,7 +7,8 @@ import { DetalhesDisparo } from './pages/DetalheDisparo';
 import { Login } from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import { TVCockpit } from './pages/TVCockpit';
-import { LogOut, Users } from 'lucide-react';
+import Relatorios from './pages/Relatorios';
+import { LogOut, Users, BarChart3 } from 'lucide-react';
 import { useUserRole } from './hooks/useUserRole';
 import logo from './assets/logo.png';
 import type { Session } from '@supabase/supabase-js';
@@ -210,6 +211,39 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             gap: '0.5rem',
             paddingBottom: '0.5rem',
           }}>
+            <button
+              onClick={() => navigate('/relatorios')}
+              style={{
+                padding: '0.375rem 0.75rem',
+                background: 'rgba(59,130,246,0.05)',
+                border: '1px solid rgba(59,130,246,0.15)',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                color: 'rgba(59,130,246,0.8)',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.2s',
+                minHeight: '36px',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(59,130,246,1)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(59,130,246,0.4)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(59,130,246,0.1)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(59,130,246,0.8)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(59,130,246,0.15)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(59,130,246,0.05)';
+              }}
+            >
+              <BarChart3 style={{ width: '12px', height: '12px' }} /> Relatórios & KPIs
+            </button>
             {isAdmin && (
               <button
                 onClick={() => navigate('/usuarios')}
@@ -332,6 +366,7 @@ function App() {
               <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
               <Route path="/disparo/:id" element={<RequireAuth><DetalhesDisparo /></RequireAuth>} />
               <Route path="/usuarios" element={<RequireAuth><Usuarios /></RequireAuth>} />
+              <Route path="/relatorios" element={<RequireAuth><Relatorios /></RequireAuth>} />
             </Routes>
           </Layout>
         } />

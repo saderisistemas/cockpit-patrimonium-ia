@@ -61,10 +61,12 @@ export const api = {
     // POST direto ao webhook do N8N via proxy Vite (dev) / Netlify (prod).
     // O proxy encaminha /webhook/* → https://patrimonium-n8n.cloudfy.live/webhook/*
     solicitarAnalise: async (pendencia: Pendencia) => {
+        const descricao_formatada = (await import('./eventUtils')).getEventDescription(pendencia.evento_codigo, pendencia.descricao_catalogo, pendencia.desc_evento, pendencia.agrupamento || "Disparo de alarme");
+
         const payload = {
             id_disparo: pendencia.id_disparo,
             evento_codigo: pendencia.evento_codigo,
-            descricao: pendencia.descricao_catalogo || pendencia.desc_evento || pendencia.agrupamento || "Disparo de alarme",
+            descricao: descricao_formatada,
             prioridade: pendencia.prioridade,
             plano: pendencia.plano_extraido || "BÁSICO",
             cliente: pendencia.nome,
@@ -140,5 +142,79 @@ export const api = {
             .eq('id', id);
         if (error) throw error;
         return true;
+    },
+
+    // === RELATÓRIOS & KPIs ===
+
+    fetchPendenciasReport: async (days: number = 7) => {
+        // Adjust logic for '1 day' to mean technically 'from the start of today' using server local time assumptions
+        const sinceDate = new Date();
+        if (days === 1) {
+            sinceDate.setHours(0, 0, 0, 0); // Midnight today
+        } else {
+            sinceDate.setDate(sinceDate.getDate() - days);
+        }
+        const since = sinceDate.toISOString().split('T')[0];
+        let allData: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('iris_pendencias')
+                .select('id_disparo,id_cliente,patrimonio,nome,prioridade,data_evento,hora_evento,evento_codigo,desc_evento,descricao_catalogo,zona,setor,status')
+                .gte('data_evento', since)
+                .order('data_evento', { ascending: false })
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                if (data.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
+    },
+
+    fetchAnalisesReport: async (days: number = 7) => {
+        const sinceDate = new Date();
+        if (days === 1) {
+            sinceDate.setHours(0, 0, 0, 0);
+        } else {
+            sinceDate.setDate(sinceDate.getDate() - days);
+        }
+        const since = sinceDate.toISOString();
+        let allData: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('iris_analises')
+                .select('id,id_disparo,score,plano_utilizado,criado_em')
+                .gte('criado_em', since)
+                .order('criado_em', { ascending: false })
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                if (data.length < pageSize) hasMore = false;
+                else page++;
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
     },
 };

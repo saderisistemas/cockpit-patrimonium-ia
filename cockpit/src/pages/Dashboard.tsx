@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import type { Pendencia } from '../lib/api';
 import { useUserRole } from '../hooks/useUserRole';
 import { getPriorityConfig } from '../lib/priorityConfig';
+import { getEventDescription } from '../lib/eventUtils';
 
 export const Dashboard = () => {
     const [pendencias, setPendencias] = useState<Pendencia[]>([]);
@@ -225,7 +226,7 @@ export const Dashboard = () => {
                                                         <div className="text-[10px] opacity-70 font-medium">Cod: {pend.id_cliente}</div>
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <div className="font-bold">{pend.evento_codigo} {(pend.descricao_catalogo || pend.desc_evento) ? `- ${pend.descricao_catalogo || pend.desc_evento}` : ''}</div>
+                                                        <div className="font-bold">{pend.evento_codigo} {getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento) ? `- ${getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento)}` : ''}</div>
                                                         <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}</div>
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
@@ -286,7 +287,7 @@ export const Dashboard = () => {
                                             </div>
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-slate-400 truncate">{pend.evento_codigo} {(pend.descricao_catalogo || pend.desc_evento) ? `- ${pend.descricao_catalogo || pend.desc_evento}` : ''}</div>
+                                                    <div className="text-xs font-bold text-slate-400 truncate">{pend.evento_codigo} {getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento) ? `- ${getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento)}` : ''}</div>
                                                     <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'}</div>
                                                 </div>
                                                 <button
