@@ -86,22 +86,48 @@ export default function Relatorios() {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([hora, count]) => ({ hora: hora + 'h', eventos: count }));
 
-    // Top 10 events
-    const byCodeMap: Record<string, { count: number, name: string, patrimonios: Set<string> }> = {};
-    pendencias.forEach(p => {
-        if (!byCodeMap[p.evento_codigo]) byCodeMap[p.evento_codigo] = { count: 0, name: getEventDescription(p.evento_codigo, p.descricao_catalogo || p.desc_evento || ''), patrimonios: new Set() };
-        byCodeMap[p.evento_codigo].count += 1;
-        if (p.patrimonio) byCodeMap[p.evento_codigo].patrimonios.add(p.patrimonio);
-    });
-    const topEvents = Object.entries(byCodeMap)
-        .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 10)
-        .map(([code, data]) => ({
-            codigo: code,
-            nome: data.name,
-            total: data.count,
-            patrimonios: Array.from(data.patrimonios)
-        }));
+    // Top 10 events or Top 10 Patrimonies
+    let topEventsDisplayTitle = "TOP EVENTOS DISPARADOS";
+    let topEventsDisplayInfo = "Os 10 códigos de alerta que tiveram maior volume no período e os principais patrimônios.";
+    let topData: any[] = [];
+
+    if (appliedEventCode) {
+        topEventsDisplayTitle = `TOP 10 PATRIMÔNIOS - EVENTO ${appliedEventCode}`;
+        topEventsDisplayInfo = "Os 10 patrimônios que mais dispararam este código de alerta específico no período selecionado.";
+
+        const byPatrimonioMap: Record<string, { count: number, name: string }> = {};
+        pendencias.forEach(p => {
+            if (!p.patrimonio) return;
+            if (!byPatrimonioMap[p.patrimonio]) byPatrimonioMap[p.patrimonio] = { count: 0, name: p.nome || p.id_cliente || '' };
+            byPatrimonioMap[p.patrimonio].count += 1;
+        });
+        topData = Object.entries(byPatrimonioMap)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 10)
+            .map(([pat, data]) => ({
+                idLabel: pat,
+                nome: data.name,
+                total: data.count,
+                tipo: 'patrimonio'
+            }));
+    } else {
+        const byCodeMap: Record<string, { count: number, name: string, patrimonios: Set<string> }> = {};
+        pendencias.forEach(p => {
+            if (!byCodeMap[p.evento_codigo]) byCodeMap[p.evento_codigo] = { count: 0, name: getEventDescription(p.evento_codigo, p.descricao_catalogo || p.desc_evento || ''), patrimonios: new Set() };
+            byCodeMap[p.evento_codigo].count += 1;
+            if (p.patrimonio) byCodeMap[p.evento_codigo].patrimonios.add(p.patrimonio);
+        });
+        topData = Object.entries(byCodeMap)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 10)
+            .map(([code, data]) => ({
+                idLabel: code,
+                nome: data.name,
+                total: data.count,
+                patrimonios: Array.from(data.patrimonios),
+                tipo: 'evento'
+            }));
+    }
 
     // Score distribution
     const scoreDistribution = [
@@ -366,13 +392,13 @@ export default function Relatorios() {
                             </ResponsiveContainer>
                         </ChartCard>
 
-                        {/* Top Events */}
-                        <ChartCard title="TOP EVENTOS DISPARADOS" info="Os 10 códigos de alerta que tiveram maior volume no período e os principais patrimônios.">
+                        {/* Top Events or Patrimonies */}
+                        <ChartCard title={topEventsDisplayTitle} info={topEventsDisplayInfo}>
                             <ResponsiveContainer width="100%" height={280}>
-                                <BarChart data={topEvents} layout="vertical" margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
+                                <BarChart data={topData} layout="vertical" margin={{ top: 5, right: 30, left: 30, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                     <XAxis type="number" tick={{ fill: '#64748b', fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }} />
-                                    <YAxis dataKey="codigo" type="category" tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} width={60} />
+                                    <YAxis dataKey="idLabel" type="category" tick={{ fill: '#94a3b8', fontSize: 13, fontWeight: 700 }} width={60} />
                                     <Tooltip content={<CustomEventTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                                     <Bar dataKey="total" fill={COLORS.cyan} radius={[0, 4, 4, 0]} />
                                 </BarChart>
@@ -522,9 +548,19 @@ export default function Relatorios() {
 const CustomEventTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
+        if (data.tipo === 'patrimonio') {
+            return (
+                <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', borderRadius: '8px', color: '#e2e8f0', fontFamily: "'JetBrains Mono', monospace", maxWidth: '320px', whiteSpace: 'normal', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Patrimônio {data.idLabel}</p>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#38bdf8' }}>{data.nome}</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Disparos: <span style={{ color: '#fff' }}>{data.total}</span></p>
+                </div>
+            );
+        }
+
         return (
             <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', borderRadius: '8px', color: '#e2e8f0', fontFamily: "'JetBrains Mono', monospace", maxWidth: '320px', whiteSpace: 'normal', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}>
-                <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Evento {data.codigo}</p>
+                <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>Evento {data.idLabel}</p>
                 <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#38bdf8' }}>{data.nome}</p>
                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Total: <span style={{ color: '#fff' }}>{data.total}</span></p>
                 {data.patrimonios && data.patrimonios.length > 0 && (
