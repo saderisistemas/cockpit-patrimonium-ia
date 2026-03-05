@@ -5,14 +5,14 @@ export type Pendencia = Database['public']['Tables']['iris_pendencias']['Row'];
 export type Analise = Database['public']['Tables']['iris_analises']['Row'];
 
 export const api = {
-    // Buscar pendências ativas (status pendente + últimas 2h)
+    // Buscar pendências ativas (status pendente + últimas 24h)
     getPendencias: async () => {
-        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const { data, error } = await supabase
             .from('iris_pendencias')
             .select('*')
             .eq('status', 'pendente')
-            .gte('capturado_em', twoHoursAgo)
+            .gte('capturado_em', oneDayAgo)
             .order('prioridade', { ascending: true })
             .order('capturado_em', { ascending: false })
             .limit(200);

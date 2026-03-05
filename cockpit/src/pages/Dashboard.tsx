@@ -56,8 +56,14 @@ export const Dashboard = () => {
             fetchPendencias(); // Recarrega ao receber WebSocket events
         });
 
+        // Polling a cada 60s como fallback caso Realtime desconecte
+        const pollingInterval = setInterval(() => {
+            fetchPendencias();
+        }, 60_000);
+
         return () => {
             subscription.unsubscribe();
+            clearInterval(pollingInterval);
         };
     }, []);
 
