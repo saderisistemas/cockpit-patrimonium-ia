@@ -74,9 +74,11 @@ export const Dashboard = () => {
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-10">
             {/* HEADER & KPIs */}
             <div className="space-y-4">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <h1 className="text-xl md:text-4xl font-black text-white tracking-tight italic leading-tight">INTELIGÊNCIA ARTIFICIAL <span className="text-brand-red not-italic">PATRIMONIUM</span></h1>
+                        <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-white tracking-tight italic leading-tight">
+                            INTELIGÊNCIA ARTIFICIAL <span className="text-brand-red not-italic">PATRIMONIUM</span>
+                        </h1>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <p className="text-slate-400 font-medium uppercase tracking-[0.2em] md:tracking-[0.3em] text-[9px] md:text-[10px]">Terminal de Monitoramento Iris</p>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -111,8 +113,8 @@ export const Dashboard = () => {
                 </div>
 
                 {/* KPI Cards - horizontal scroll on mobile, row on desktop */}
-                <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-4">
-                    <div className="glass-card tactical-border p-3 md:p-5 flex items-center gap-3 md:gap-5 md:min-w-[220px] relative overflow-hidden group">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:flex md:flex-row gap-3 md:gap-4 w-full">
+                    <div className="glass-card tactical-border p-3 md:p-5 flex flex-row items-center gap-3 md:gap-5 flex-1 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-1 h-full bg-brand-red opacity-50" />
                         <div className="w-10 h-10 md:w-14 md:h-14 bg-brand-red/10 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
                             <ShieldAlert className="w-5 h-5 md:w-8 md:h-8 text-brand-red" />
@@ -124,7 +126,7 @@ export const Dashboard = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="glass-card p-3 md:p-5 flex items-center gap-3 md:gap-5 md:min-w-[220px] relative overflow-hidden group">
+                    <div className="glass-card p-3 md:p-5 flex flex-row items-center gap-3 md:gap-5 flex-1 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-1 h-full bg-white/20" />
                         <div className="w-10 h-10 md:w-14 md:h-14 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
                             <Eye className="w-5 h-5 md:w-8 md:h-8 text-slate-300" />

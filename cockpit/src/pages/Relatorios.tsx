@@ -23,7 +23,8 @@ const SCORE_COLORS = [COLORS.red, COLORS.amber, COLORS.green];
 
 export default function Relatorios() {
     const navigate = useNavigate();
-    const [period, setPeriod] = useState(7);
+    const [period, setPeriod] = useState<number | { start: string, end: string }>(7);
+    const [customDate, setCustomDate] = useState<{ start: string, end: string }>({ start: '', end: '' });
     const [loading, setLoading] = useState(true);
     const [pendencias, setPendencias] = useState<any[]>([]);
     const [analises, setAnalises] = useState<any[]>([]);
@@ -144,8 +145,10 @@ export default function Relatorios() {
         .sort((a, b) => b[1].count - a[1].count);
 
 
+    const periodLabel = typeof period === 'number' ? `Últimos ${period} dias` : `${period.start} até ${period.end}`;
+
     const kpis = [
-        { label: 'Total de Eventos', value: totalEvents.toLocaleString(), icon: BarChart3, color: COLORS.blue, sub: `Últimos ${period} dias`, info: 'Soma total de todos os eventos recebidos no período.' },
+        { label: 'Total de Eventos', value: totalEvents.toLocaleString(), icon: BarChart3, color: COLORS.blue, sub: periodLabel, info: 'Soma total de todos os eventos recebidos no período.' },
         { label: 'Score Médio IA', value: avgScore.toString(), icon: TrendingUp, color: avgScore > 70 ? COLORS.red : avgScore > 40 ? COLORS.amber : COLORS.green, sub: `${analises.length} análises`, info: 'Grau médio de severidade calculado pela IA (varia de 0 a 100).' },
         { label: 'Taxa de Fechamento', value: closeRate + '%', icon: CheckCircle2, color: COLORS.green, sub: `${closedCount} de ${totalEvents}`, info: 'Porcentagem de eventos que já foram concluídos/fechados pelo time.' },
         { label: 'Eventos Críticos', value: criticalCount.toLocaleString(), icon: ShieldAlert, color: COLORS.red, sub: 'Prioridade E/H', info: 'Quantidade de alertas graves (Emergência ou Alta prioridade).' },
@@ -189,7 +192,7 @@ export default function Relatorios() {
                 </div>
 
                 {/* Period selector */}
-                <div style={{ display: 'flex', gap: '8px', fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ display: 'flex', gap: '8px', fontFamily: "'JetBrains Mono', monospace", flexWrap: 'wrap', alignItems: 'center' }}>
                     {[{ label: 'Hoje', value: 1 }, { label: '7 dias', value: 7 }, { label: '14 dias', value: 14 }].map(opt => (
                         <button
                             key={opt.value}
@@ -197,11 +200,11 @@ export default function Relatorios() {
                             style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
-                                border: period === opt.value ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
-                                background: period === opt.value ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
-                                color: period === opt.value ? '#c4b5fd' : '#94a3b8',
+                                border: typeof period === 'number' && period === opt.value ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
+                                background: typeof period === 'number' && period === opt.value ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
+                                color: typeof period === 'number' && period === opt.value ? '#c4b5fd' : '#94a3b8',
                                 cursor: 'pointer',
-                                fontWeight: period === opt.value ? 600 : 400,
+                                fontWeight: typeof period === 'number' && period === opt.value ? 600 : 400,
                                 fontSize: '12px',
                                 textTransform: 'uppercase',
                                 transition: 'all 0.2s',
@@ -210,6 +213,41 @@ export default function Relatorios() {
                             {opt.label}
                         </button>
                     ))}
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <input
+                            type="date"
+                            value={customDate.start}
+                            onChange={(e) => setCustomDate(prev => ({ ...prev, start: e.target.value }))}
+                            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', outline: 'none' }}
+                        />
+                        <span style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase' }}>até</span>
+                        <input
+                            type="date"
+                            value={customDate.end}
+                            onChange={(e) => setCustomDate(prev => ({ ...prev, end: e.target.value }))}
+                            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', outline: 'none' }}
+                        />
+                        <button
+                            onClick={() => { if (customDate.start && customDate.end) setPeriod(customDate); }}
+                            disabled={!customDate.start || !customDate.end}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: typeof period !== 'number' ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
+                                background: typeof period !== 'number' ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.05)',
+                                color: typeof period !== 'number' ? '#c4b5fd' : '#94a3b8',
+                                cursor: customDate.start && customDate.end ? 'pointer' : 'not-allowed',
+                                fontWeight: typeof period !== 'number' ? 600 : 400,
+                                fontSize: '12px',
+                                textTransform: 'uppercase',
+                                opacity: customDate.start && customDate.end ? 1 : 0.5,
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            Filtrar
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -256,7 +294,7 @@ export default function Relatorios() {
                     </div>
 
                     {/* Charts Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '20px', marginBottom: '20px' }}>
 
                         {/* Events per Day */}
                         <ChartCard title="VOLUME EVENTOS / DIA" info="Quantidade de eventos disparados por dia durante o período selecionado.">
@@ -335,7 +373,7 @@ export default function Relatorios() {
                     </div>
 
                     {/* Operational Insights (Tático) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '20px', marginBottom: '20px' }}>
                         {/* Disparos Excessivos */}
                         <div style={{
                             background: 'rgba(239, 68, 68, 0.03)',

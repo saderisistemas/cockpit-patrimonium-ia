@@ -146,27 +146,41 @@ export const api = {
 
     // === RELATÓRIOS & KPIs ===
 
-    fetchPendenciasReport: async (days: number = 7) => {
-        // Adjust logic for '1 day' to mean technically 'from the start of today' using server local time assumptions
-        const sinceDate = new Date();
-        if (days === 1) {
-            sinceDate.setHours(0, 0, 0, 0); // Midnight today
+    fetchPendenciasReport: async (period: number | { start: string, end: string } = 7) => {
+        let since = '';
+        let until = '';
+
+        if (typeof period === 'number') {
+            const sinceDate = new Date();
+            if (period === 1) {
+                sinceDate.setHours(0, 0, 0, 0); // Midnight today
+            } else {
+                sinceDate.setDate(sinceDate.getDate() - period);
+            }
+            since = sinceDate.toISOString().split('T')[0];
         } else {
-            sinceDate.setDate(sinceDate.getDate() - days);
+            since = period.start;
+            until = period.end;
         }
-        const since = sinceDate.toISOString().split('T')[0];
+
         let allData: any[] = [];
         let page = 0;
         const pageSize = 1000;
         let hasMore = true;
 
         while (hasMore) {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('iris_pendencias')
                 .select('id_disparo,id_cliente,patrimonio,nome,prioridade,data_evento,hora_evento,evento_codigo,desc_evento,descricao_catalogo,zona,setor,status')
                 .gte('data_evento', since)
                 .order('data_evento', { ascending: false })
                 .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (until) {
+                query = query.lte('data_evento', until);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -184,26 +198,41 @@ export const api = {
         return allData;
     },
 
-    fetchAnalisesReport: async (days: number = 7) => {
-        const sinceDate = new Date();
-        if (days === 1) {
-            sinceDate.setHours(0, 0, 0, 0);
+    fetchAnalisesReport: async (period: number | { start: string, end: string } = 7) => {
+        let since = '';
+        let until = '';
+
+        if (typeof period === 'number') {
+            const sinceDate = new Date();
+            if (period === 1) {
+                sinceDate.setHours(0, 0, 0, 0);
+            } else {
+                sinceDate.setDate(sinceDate.getDate() - period);
+            }
+            since = sinceDate.toISOString();
         } else {
-            sinceDate.setDate(sinceDate.getDate() - days);
+            since = new Date(`${period.start}T00:00:00-03:00`).toISOString();
+            until = new Date(`${period.end}T23:59:59-03:00`).toISOString();
         }
-        const since = sinceDate.toISOString();
+
         let allData: any[] = [];
         let page = 0;
         const pageSize = 1000;
         let hasMore = true;
 
         while (hasMore) {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('iris_analises')
                 .select('id,id_disparo,score,plano_utilizado,criado_em')
                 .gte('criado_em', since)
                 .order('criado_em', { ascending: false })
                 .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (until) {
+                query = query.lte('criado_em', until);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
