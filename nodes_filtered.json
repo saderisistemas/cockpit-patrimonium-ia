@@ -1,0 +1,49 @@
+[
+  {
+    "parameters": {
+      "url": "=https://nominatim.openstreetmap.org/search?q={{encodeURIComponent($('Get Row Supabase').first().json.endereco || 'São Paulo')}}&format=json&limit=1",
+      "sendHeaders": true,
+      "headerParameters": {
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "value": "Patrimonium_Iris_IA/1.0 (ti@patrimonium.com.br)"
+          },
+          {
+            "name": "Referer",
+            "value": "https://patrimonium-n8n.cloudfy.live"
+          },
+          {
+            "name": "Accept-Language",
+            "value": "pt-BR"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "uuid-geo-1772732306592",
+    "name": "Geocoding Nominatim",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.1,
+    "position": [
+      1136,
+      -144
+    ],
+    "alwaysOutputData": true
+  },
+  {
+    "parameters": {
+      "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('Geocoding Nominatim').first().json.lat || '-23.5505' }}&longitude={{ $('Geocoding Nominatim').first().json.lon || '-46.6333' }}&current_weather=true",
+      "options": {}
+    },
+    "id": "uuid-weather-1772732306592",
+    "name": "Open-Meteo Weather",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.1,
+    "position": [
+      1344,
+      -144
+    ],
+    "alwaysOutputData": true
+  }
+]

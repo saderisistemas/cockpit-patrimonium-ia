@@ -21,31 +21,37 @@ interface AnaliseTV {
 // Helper para traduzir clima
 const getWeatherDisplay = (clima: any) => {
     if (!clima || typeof clima !== 'object' || clima.code === undefined || clima.code === null) return null;
-    const code = clima.code;
+    const code = Number(clima.code);
     let Icon = Cloud;
     let color = "text-slate-400";
-    let anim = "animate-pulse";
+    let bgGlow = "shadow-[0_0_30px_rgba(148,163,184,0.4)]";
+    let anim = "animate-[pulse_1.5s_ease-in-out_infinite]";
     let desc = "Nublado";
 
-    if (code === 0) { Icon = Sun; color = "text-yellow-400"; anim = "animate-[spin_8s_linear_infinite]"; desc = "Céu Limpo"; }
-    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-slate-300"; anim = "animate-pulse"; desc = "Parc. Nublado"; }
-    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-400"; anim = "animate-pulse"; desc = "Nevoeiro"; }
-    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; anim = "animate-bounce"; desc = "Chuva"; }
-    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-sky-200"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
-    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-purple-400"; anim = "animate-pulse"; desc = "Tempestade"; }
+    if (code === 0) { Icon = Sun; color = "text-yellow-300"; bgGlow = "shadow-[0_0_40px_rgba(253,224,71,0.6)]"; anim = "animate-[spin_4s_linear_infinite]"; desc = "Céu Limpo"; }
+    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-cyan-200"; bgGlow = "shadow-[0_0_35px_rgba(165,243,252,0.5)]"; anim = "animate-[bounce_3s_infinite]"; desc = "Parc. Nublado"; }
+    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-200"; bgGlow = "shadow-[0_0_35px_rgba(226,232,240,0.5)]"; anim = "animate-pulse"; desc = "Nevoeiro"; }
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; bgGlow = "shadow-[0_0_40px_rgba(59,130,246,0.7)]"; anim = "animate-bounce"; desc = "Chuva"; }
+    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-white"; bgGlow = "shadow-[0_0_40px_rgba(255,255,255,0.7)]"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
+    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-fuchsia-400"; bgGlow = "shadow-[0_0_45px_rgba(192,132,252,0.8)]"; anim = "animate-bounce"; desc = "Tempestade"; }
 
-    return { Icon, color, anim, desc, temp: clima.temp };
+    return { Icon, color, bgGlow, anim, desc, temp: clima.temp };
 };
 
 // Helper para traduzir o plano
 const getPlanoLabel = (plano: string) => {
-    switch (plano) {
-        case '1000': return 'Bronze';
-        case '2000': return 'Prata';
-        case '3000': return 'Ouro';
-        case '4000': return 'Platina';
-        case '5000': return 'Diamante';
-        default: return 'Geral';
+    switch (String(plano)) {
+        case '0000': return 'TÁTICO / VISUALIZAÇÃO';
+        case '1000': return 'PATRIMONIUM SMART';
+        case '2000': return 'BRONZE';
+        case '3000': return 'PRATA';
+        case '4000': return 'OURO';
+        case '5000': return 'PREMIUM';
+        case '6000': return 'DISPARO POR IMAGEM';
+        case '7000': return 'ANALÍTICO – CFTV';
+        case '8000': return 'ANALÍTICO PLUS – CFTV + ALARME';
+        case '9000': return 'PATRIMONIUM MOBILE';
+        default: return 'GERAL';
     }
 };
 
@@ -59,9 +65,6 @@ const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
-const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
 
 type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'descricao_catalogo' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'zona' | 'agrupamento' | 'prioridade'>;
 
@@ -148,7 +151,7 @@ export const TVCockpit = () => {
     }, []);
 
     const latest = analises[0];
-    const previous = analises.slice(1, 5);
+
 
     // Obter cores de acordo com a prioridade/evento se o 'latest' tiver dados de pendência
     const colors = latest?.pendencia ? getEventColors(latest.pendencia.evento_codigo, latest.pendencia.prioridade ?? 5) : getEventColors();
@@ -165,13 +168,13 @@ export const TVCockpit = () => {
             <div className="fixed bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-red-500/30 z-40" />
             <div className="fixed bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-red-500/30 z-40" />
 
-            {/* TOP BAR — Bigger */}
-            <div className="h-24 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-8 relative z-30">
+            {/* TOP BAR — Compacted */}
+            <div className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-6 relative z-30">
                 <div className="flex items-center gap-6">
                     <img src={logo} alt="Patrimonium" className="h-16 drop-shadow-lg" />
                     <div>
-                        <div className="text-3xl font-black italic tracking-wider">
-                            <span className="text-white">COCKPIT</span> <span className="text-red-500">IRIS TV</span>
+                        <div className="text-2xl font-black italic tracking-tight">
+                            <span className="text-white">COCKPIT</span> <span className="text-brand-red">IRIS TV</span>
                         </div>
                         <div className="text-sm font-black text-slate-500 uppercase tracking-[0.4em]">
                             Central Operacional Tática Inteligente
@@ -186,29 +189,29 @@ export const TVCockpit = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-10">
-                    <div className="flex gap-8">
+                <div className="flex items-center gap-6">
+                    <div className="flex gap-6">
                         <div className="text-right">
-                            <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Críticos</div>
-                            <div className="text-4xl font-black text-red-500 tabular-nums leading-none">{totalCriticos}</div>
+                            <div className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Críticos</div>
+                            <div className="text-3xl font-black text-brand-red tabular-nums leading-none">{totalCriticos}</div>
                         </div>
-                        <div className="w-px bg-white/10" />
+                        <div className="w-px h-8 self-center bg-white/10" />
                         <div className="text-right">
-                            <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Pendentes</div>
-                            <div className="text-4xl font-black text-white tabular-nums leading-none">{totalPendentes}</div>
+                            <div className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Pendentes</div>
+                            <div className="text-3xl font-black text-white tabular-nums leading-none">{totalPendentes}</div>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <div className="text-5xl font-black tabular-nums font-mono text-white/90 drop-shadow-md">{currentTime.toLocaleTimeString('pt-BR')}</div>
-                        <div className="text-sm text-white/40 font-mono tracking-wider">{currentTime.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                    <div className="text-right border-l border-white/10 pl-6 ml-2">
+                        <div className="text-4xl font-black tabular-nums font-mono text-white/90 drop-shadow-md leading-none">{currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-[10px] text-white/40 font-mono tracking-widest uppercase mt-1">{currentTime.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
                     </div>
                 </div>
             </div>
 
             {/* MAIN CONTENT */}
-            <div className="h-[calc(100vh-6rem)] flex">
+            <div className="h-[calc(100vh-5rem)] flex">
                 {/* LEFT — LATEST ANALYSIS */}
-                <div className="flex-1 p-8 flex flex-col">
+                <div className="flex-1 p-6 flex flex-col overflow-hidden">
                     {!latest ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-center">
                             <BrainCircuit className="w-40 h-40 text-white/5 mb-10" />
@@ -224,68 +227,86 @@ export const TVCockpit = () => {
                     ) : (
                         <>
                             {/* HEADER - "ANÁLISE POR INTELIGÊNCIA ARTIFICIAL" */}
-                            <div className={`mb-5 flex items-center gap-5 ${isNew ? 'animate-pulse' : ''}`}>
-                                <BrainCircuit className={`w-10 h-10 ${colors.textColor}`} />
-                                <h2 className="text-4xl font-black uppercase tracking-widest italic drop-shadow-md">
+                            <div className={`mb-4 flex items-center gap-5 ${isNew ? 'animate-pulse' : ''}`}>
+                                <BrainCircuit className={`w-8 h-8 ${colors.textColor}`} />
+                                <h2 className="text-3xl font-black uppercase tracking-widest italic drop-shadow-md">
                                     ANÁLISE <span className={colors.textColor}>POR IA</span>
                                 </h2>
-                                <span className="text-lg font-mono text-white/30 ml-auto border border-white/5 bg-black/20 px-4 py-1 rounded-xl">
-                                    {formatTime(latest.criado_em)} • {formatDate(latest.criado_em)}
+                                <span className="text-base font-mono text-white/30 ml-auto border border-white/5 bg-black/20 px-4 py-1 rounded-lg">
+                                    LOG ID: {latest.id_disparo.substring(0, 8)} • {formatTime(latest.criado_em)}
                                 </span>
                             </div>
 
                             {/* SCORE + EVENT INFO */}
                             <div className={`flex flex-col gap-6 mb-6 ${isNew ? 'animate-in slide-in-from-left duration-700' : ''}`}>
 
-                                {/* TOPO DESTAQUE MÁXIMO: Cliente e Evento */}
-                                <div className={`bg-black/30 border-l-[8px] ${colors.borderColor} border-t border-r border-b border-white/5 rounded-3xl p-6 flex justify-between items-center shadow-lg relative overflow-hidden`}>
-                                    <div className={`absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l ${colors.bgColor} to-transparent pointer-events-none opacity-50`} />
+                                {/* INDUSTRIAL OPERATIONAL BELT */}
+                                <div className={`bg-black/40 border-l-[10px] ${colors.borderColor} border-t border-r border-b border-white/5 rounded-3xl p-6 flex items-center shadow-2xl relative overflow-hidden mb-4`}>
+                                    <div className={`absolute right-0 top-0 bottom-0 w-1/4 bg-gradient-to-l ${colors.bgColor} to-transparent pointer-events-none opacity-20`} />
 
-                                    <div className="flex-1 space-y-2 z-10">
-                                        <div className={`flex items-center gap-3 mb-1 ${colors.textColor} opacity-80`}>
-                                            <Building2 className="w-6 h-6" />
-                                            <span className="text-2xl font-black uppercase tracking-[0.2em]">Cliente & Patrimônio</span>
+                                    {/* CLIENT ZONE */}
+                                    <div className="flex-[1.5] space-y-1 z-10">
+                                        <div className={`flex items-center gap-3 ${colors.textColor} opacity-60`}>
+                                            <Building2 className="w-5 h-5" />
+                                            <span className="text-lg font-black uppercase tracking-[0.3em]">Cliente & Patrimônio</span>
                                         </div>
-                                        <div className="flex items-end gap-4">
-                                            <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.nome || "CLIENTE NÃO IDENTIFICADO"}</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-7xl font-black text-white italic leading-[1.1] tracking-tighter truncate">{latest.pendencia?.nome || "CLIENTE NÃO IDENTIFICADO"}</span>
                                             {latest.pendencia?.patrimonio && (
-                                                <span className="text-4xl font-bold text-white/50 bg-white/10 px-4 py-1 rounded-xl border border-white/10 mb-1 shadow-inner">
-                                                    Cod: {latest.pendencia?.patrimonio}
-                                                </span>
+                                                <div className="mt-1 flex items-center gap-3">
+                                                    <span className="text-4xl font-black text-white/90 bg-white/10 px-4 py-0.5 rounded-lg border border-white/20 shadow-lg">
+                                                        ID: {latest.pendencia?.patrimonio}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="text-right z-10 space-y-2 border-l border-white/10 pl-8 ml-8">
-                                        <div className={`flex items-center gap-2 justify-end mb-1 ${colors.textColor}`}>
-                                            <Crosshair className="w-6 h-6" />
-                                            <span className="text-2xl font-black uppercase tracking-[0.2em]">Evento Capturado</span>
+                                    {/* WEATHER HUB */}
+                                    <div className="flex-1 flex items-center justify-center border-x border-white/10 px-8 z-10">
+                                        {(() => {
+                                            let parsedEnriquecido = latest?.evento_enriquecido;
+                                            if (typeof parsedEnriquecido === 'string') {
+                                                try { parsedEnriquecido = JSON.parse(parsedEnriquecido); } catch (e) { }
+                                            }
+                                            if (typeof parsedEnriquecido === 'string') {
+                                                try { parsedEnriquecido = JSON.parse(parsedEnriquecido); } catch (e) { }
+                                            }
+                                            const climaInfo = (parsedEnriquecido as any)?.clima;
+                                            const weather = getWeatherDisplay(climaInfo);
+                                            if (weather) {
+                                                const { Icon, color, anim, desc, temp, bgGlow } = weather;
+                                                return (
+                                                    <div className={`flex items-center gap-6 bg-black/60 border border-white/10 px-8 py-4 rounded-[2rem] ${bgGlow} transition-all duration-300`}>
+                                                        <Icon size={56} className={`${color} ${anim}`} style={{ filter: 'drop-shadow(0 0 15px currentColor)' }} />
+                                                        <div className="flex flex-col items-start leading-none">
+                                                            <span className="text-5xl font-black text-white tracking-tighter">{temp}°C</span>
+                                                            <span className={`text-[12px] font-black uppercase tracking-[0.3em] mt-1 ${color}`}>{desc}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div className="opacity-10 grayscale py-4">
+                                                    <Cloud size={64} />
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* EVENT ZONE */}
+                                    <div className="flex-1 text-right z-10 space-y-1 pl-8">
+                                        <div className={`flex items-center gap-2 justify-end ${colors.textColor} opacity-60`}>
+                                            <Crosshair className="w-5 h-5" />
+                                            <span className="text-lg font-black uppercase tracking-[0.3em]">Evento Capturado</span>
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <div className="flex items-center gap-4">
-                                                {/* INÍCIO INFORMAÇÃO DO CLIMA */}
-                                                {(() => {
-                                                    const weather = getWeatherDisplay(latest?.evento_enriquecido?.clima);
-                                                    if (weather) {
-                                                        const { Icon, color, anim, desc, temp } = weather;
-                                                        return (
-                                                            <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md shadow-inner mr-2">
-                                                                <Icon className={`w-8 h-8 ${color} ${anim}`} />
-                                                                <div className="flex flex-col items-start leading-none">
-                                                                    <span className="text-lg font-black text-white">{temp}°C</span>
-                                                                    <span className={`text-xs font-bold uppercase tracking-widest ${color}`}>{desc}</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                })()}
-                                                {/* FIM INFORMAÇÃO DO CLIMA */}
-                                                <span className="text-6xl font-black text-white italic leading-none">{latest.pendencia?.evento_codigo || "---"}</span>
+                                                <span className="text-7xl font-black text-white italic leading-none tracking-tighter">{latest.pendencia?.evento_codigo || "---"}</span>
                                             </div>
-                                            <span className={`text-3xl font-bold mt-2 ${colors.textColor}`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
+                                            <span className={`text-3xl font-black mt-1 leading-tight ${colors.textColor} max-w-[400px] truncate`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
                                             {(latest.pendencia?.zona || latest.pendencia?.particao) && (
-                                                <span className="text-lg font-mono text-white/40 mt-1 bg-white/5 px-3 py-0.5 rounded-lg border border-white/10">Zona: {latest.pendencia.zona || latest.pendencia.particao}</span>
+                                                <span className="text-xl font-bold text-white/50 mt-1 bg-white/5 px-4 py-1 rounded-lg border border-white/10 uppercase tracking-widest italic">SETOR: {latest.pendencia.zona || latest.pendencia.particao}</span>
                                             )}
                                         </div>
                                     </div>
@@ -293,51 +314,52 @@ export const TVCockpit = () => {
 
                                 {/* MEIO: Score e Veredito IA em Lado a Lado para Máximo Impacto */}
                                 <div className="flex gap-4">
-                                    {/* Score — MAXIMUM SIZE */}
-                                    <div className={`w-72 shrink-0 bg-gradient-to-br ${getScoreColor(latest.score).bg} ${getScoreColor(latest.score).border} border rounded-3xl p-4 flex flex-col items-center justify-center shadow-2xl ${getScoreColor(latest.score).glow} relative overflow-hidden`}>
+                                    {/* Score — SLIGHTLY COMPACTED SCALE */}
+                                    <div className={`w-64 shrink-0 bg-gradient-to-br ${getScoreColor(latest.score).bg} ${getScoreColor(latest.score).border} border rounded-3xl p-4 flex flex-col items-center justify-center shadow-2xl ${getScoreColor(latest.score).glow} relative overflow-hidden`}>
                                         <BrainCircuit className="absolute -right-8 -top-8 w-40 h-40 opacity-10" />
-                                        <div className={`text-[8.5rem] font-black ${getScoreColor(latest.score).text} tabular-nums leading-none tracking-tighter`}>{latest.score}</div>
-                                        <div className="text-lg font-black uppercase tracking-[0.2em] text-white/50 mt-2">Score de Risco</div>
-                                        <div className={`text-xl font-black uppercase tracking-[0.15em] text-center mt-1 ${getScoreColor(latest.score).text}`}>
+                                        <div className={`text-[7.5rem] font-black ${getScoreColor(latest.score).text} tabular-nums leading-none tracking-tighter`}>{latest.score}</div>
+                                        <div className="text-sm font-black uppercase tracking-[0.34em] text-white/50 mt-1">Score de Risco</div>
+                                        <div className={`text-xl font-black uppercase tracking-[0.2em] text-center mt-1 ${getScoreColor(latest.score).text}`}>
                                             {getScoreColor(latest.score).label}
                                         </div>
                                     </div>
 
                                     {/* Veredito IA Gigante - COM CORES DINAMICAS */}
-                                    <div className={`flex-1 flex flex-col justify-center ${colors.bgColor} border-l-[12px] ${colors.borderColor} rounded-r-3xl p-8 ${colors.shadowColor} relative transition-all duration-500`}>
-                                        <div className="absolute right-6 bottom-6 border border-white/10 px-4 py-2 bg-black/40 rounded-xl backdrop-blur-md">
+                                    <div className={`flex-1 flex flex-col justify-center ${colors.bgColor} border-l-[12px] ${colors.borderColor} rounded-r-3xl p-10 ${colors.shadowColor} relative transition-all duration-500`}>
+                                        <div className={`absolute right-6 top-6 border-2 ${colors.borderColor} px-6 py-2 bg-black/80 rounded-xl backdrop-blur-md shadow-2xl z-20`}>
                                             {latest.plano_utilizado && (
-                                                <div className={`flex items-center gap-2 opacity-80 ${colors.textColor}`}>
+                                                <div className={`flex items-center gap-2 ${colors.textColor}`}>
                                                     <Tag className="w-5 h-5" />
-                                                    <span className="font-bold text-lg uppercase tracking-wider">
-                                                        Motor {latest.plano_utilizado} — {getPlanoLabel(latest.plano_utilizado)}
+                                                    <span className="font-black text-xl uppercase tracking-[0.2em] drop-shadow-lg">
+                                                        {getPlanoLabel(latest.plano_utilizado)}
                                                     </span>
                                                 </div>
                                             )}
                                         </div>
-                                        <div className={`text-2xl font-black ${colors.textColor} uppercase tracking-[0.2em] mb-4 drop-shadow-sm`}>Veredito da Inteligência Artificial</div>
-                                        <div className="text-white font-bold text-2xl leading-tight line-clamp-3 pr-40 drop-shadow-md">{latest.hipotese}</div>
+                                        <div className={`text-2xl font-black ${colors.textColor} uppercase tracking-[0.3em] mb-4 drop-shadow-sm`}>Veredito da Inteligência Artificial</div>
+                                        <div className="text-white font-black text-[2.4rem] leading-[1.2] line-clamp-3 pr-10 drop-shadow-2xl">{latest.hipotese}</div>
                                     </div>
                                 </div>
 
                                 {/* ACTION + EVIDENCE — TV BOTTOM SECTION */}
-                                <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-                                    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 flex flex-col shadow-inner overflow-hidden">
-                                        <div className="text-xl font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-3 shrink-0">
-                                            <ShieldAlert className={`w-7 h-7 ${colors.textColor}`} /> Diretriz Sistêmica (Ação Recomendada)
+                                <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                                    <div className="bg-black/40 border border-white/10 rounded-3xl p-8 flex flex-col shadow-inner overflow-hidden relative">
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${colors.bgColor}`} />
+                                        <div className="text-2xl font-black text-slate-400 uppercase tracking-[0.4em] mb-6 flex items-center gap-3 shrink-0">
+                                            <ShieldAlert className={`w-8 h-8 ${colors.textColor}`} /> Diretriz Sistêmica (Ação Recomendada)
                                         </div>
-                                        <div className={`text-white/90 ${colors.bgColor} font-bold text-[1.65rem] leading-snug flex-1 p-5 rounded-2xl border border-white/10 content-start overflow-y-auto custom-scrollbar`}>
+                                        <div className={`text-white font-black text-[2.2rem] leading-tight flex-1 p-6 rounded-2xl bg-white/[0.03] border border-white/5 content-start overflow-y-auto custom-scrollbar shadow-2xl`}>
                                             {latest.acao_recomendada}
                                         </div>
                                     </div>
 
-                                    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 flex flex-col shadow-inner overflow-hidden">
-                                        <div className="text-xl font-black text-slate-500 uppercase tracking-[0.3em] mb-4 shrink-0">Fatos Encontrados (Evidências)</div>
-                                        <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                                    <div className="bg-black/40 border border-white/10 rounded-3xl p-8 flex flex-col shadow-inner overflow-hidden">
+                                        <div className="text-2xl font-black text-slate-400 uppercase tracking-[0.4em] mb-6 shrink-0">Fatos Encontrados (Evidências)</div>
+                                        <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-4">
                                             {latest.evidencias && Array.isArray(latest.evidencias) && latest.evidencias.map((ev: any, i: number) => (
-                                                <div key={i} className="flex gap-4 text-[1.4rem] items-start bg-white/[0.03] p-4 rounded-xl border border-white/5 hover:bg-white/[0.05] transition-colors">
-                                                    <span className={`${colors.textColor} font-black shrink-0 mt-0.5 drop-shadow`}>[E{i + 1}]</span>
-                                                    <span className="text-white/80 font-medium leading-normal">{typeof ev === 'string' ? ev : ev.dado || JSON.stringify(ev)}</span>
+                                                <div key={i} className="flex gap-6 text-[1.8rem] items-start bg-white/[0.04] p-5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-all">
+                                                    <span className={`${colors.textColor} font-black shrink-0 mt-1 drop-shadow-lg`}>[E{i + 1}]</span>
+                                                    <span className="text-white/90 font-bold leading-tight tracking-tight">{typeof ev === 'string' ? ev : ev.dado || JSON.stringify(ev)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -348,50 +370,7 @@ export const TVCockpit = () => {
                     )}
                 </div>
 
-                {/* RIGHT SIDEBAR — BIGGER */}
-                <div className="w-[400px] border-l border-white/5 bg-black/30 flex flex-col">
-                    <div className="p-5 border-b border-white/5 bg-white/[0.02]">
-                        <div className="text-lg font-black text-slate-500 uppercase tracking-[0.3em] shadow-sm">Atividades Recentes</div>
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                        {previous.length === 0 && (
-                            <div className="p-8 text-center text-white/10 text-lg font-medium italic">
-                                Histórico vázio
-                            </div>
-                        )}
-                        {previous.map((a, idx) => {
-                            const sc = getScoreColor(a.score);
-                            // Resgatar cor do sidebar baseada nas pendencias das analisadas
-                            const historyColors = a.pendencia ? getEventColors(a.pendencia.evento_codigo, a.pendencia.prioridade ?? 5) : getEventColors();
-                            return (
-                                <div key={a.id} className={`p-6 border-b border-white/5 bg-black/20 ${idx === 0 && isNew ? 'animate-in slide-in-from-top duration-500' : ''}`}>
-                                    <div className="flex items-center gap-4 mb-3">
-                                        <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${sc.bg} ${sc.border} border flex items-center justify-center shadow-lg ${sc.glow}`}>
-                                            <span className={`text-2xl font-black ${sc.text} tabular-nums`}>{a.score}</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`text-lg font-black truncate ${historyColors.textColor}`}>
-                                                {a.pendencia?.evento_codigo || a.id_disparo.slice(0, 12)}
-                                                {(a.pendencia?.zona || a.pendencia?.particao) && <span className="text-white/30 font-mono text-sm ml-1">[Z:{a.pendencia.zona || a.pendencia.particao}]</span>}
-                                                <span className="text-white/60 font-bold ml-2"> — {getEventDescription(a.pendencia?.evento_codigo, a.pendencia?.descricao_catalogo, a.pendencia?.desc_evento)}</span>
-                                            </div>
-                                            <div className="text-sm text-white/50 font-bold truncate mt-0.5">{a.pendencia?.nome}</div>
-                                            <div className="text-xs text-white/20 font-mono mt-1">{formatTime(a.criado_em)}</div>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm text-white/40 font-medium leading-snug line-clamp-3">{a.hipotese}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
 
-                    <div className="p-6 border-t border-white/5 bg-black/40">
-                        <div className="text-center">
-                            <div className="text-sm font-black text-white/20 uppercase tracking-[0.4em] drop-shadow">Patrimonium Segurança 24H</div>
-                            <div className="text-[10px] font-mono text-white/10 tracking-widest mt-1">IRIS COCKPIT TV v1.0 — by Saderi Sistemas</div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* NEW ANALYSIS FLASH */}

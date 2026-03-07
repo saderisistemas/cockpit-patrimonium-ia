@@ -11,20 +11,38 @@ import toast from 'react-hot-toast';
 // Helper para traduzir clima
 const getWeatherDisplay = (clima: any) => {
     if (!clima || typeof clima !== 'object' || clima.code === undefined || clima.code === null) return null;
-    const code = clima.code;
+    const code = Number(clima.code);
     let Icon = Cloud;
     let color = "text-slate-400";
-    let anim = "animate-pulse";
+    let bgGlow = "shadow-[0_0_30px_rgba(148,163,184,0.4)]";
+    let anim = "animate-[pulse_1.5s_ease-in-out_infinite]";
     let desc = "Nublado";
 
-    if (code === 0) { Icon = Sun; color = "text-yellow-400"; anim = "animate-[spin_8s_linear_infinite]"; desc = "Céu Limpo"; }
-    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-slate-300"; anim = "animate-pulse"; desc = "Parc. Nublado"; }
-    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-400"; anim = "animate-pulse"; desc = "Nevoeiro"; }
-    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; anim = "animate-bounce"; desc = "Chuva"; }
-    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-sky-200"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
-    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-purple-400"; anim = "animate-pulse"; desc = "Tempestade"; }
+    if (code === 0) { Icon = Sun; color = "text-yellow-300"; bgGlow = "shadow-[0_0_40px_rgba(253,224,71,0.6)]"; anim = "animate-[spin_4s_linear_infinite]"; desc = "Céu Limpo"; }
+    else if (code >= 1 && code <= 3) { Icon = Cloud; color = "text-cyan-200"; bgGlow = "shadow-[0_0_35px_rgba(165,243,252,0.5)]"; anim = "animate-[bounce_3s_infinite]"; desc = "Parc. Nublado"; }
+    else if (code === 45 || code === 48) { Icon = CloudFog; color = "text-slate-200"; bgGlow = "shadow-[0_0_35px_rgba(226,232,240,0.5)]"; anim = "animate-pulse"; desc = "Nevoeiro"; }
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) { Icon = CloudRain; color = "text-blue-400"; bgGlow = "shadow-[0_0_40px_rgba(59,130,246,0.7)]"; anim = "animate-bounce"; desc = "Chuva"; }
+    else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) { Icon = CloudSnow; color = "text-white"; bgGlow = "shadow-[0_0_40px_rgba(255,255,255,0.7)]"; anim = "animate-pulse"; desc = "Neve/Gelo"; }
+    else if (code >= 95 && code <= 99) { Icon = CloudLightning; color = "text-fuchsia-400"; bgGlow = "shadow-[0_0_45px_rgba(192,132,252,0.8)]"; anim = "animate-bounce"; desc = "Tempestade"; }
 
-    return { Icon, color, anim, desc, temp: clima.temp };
+    return { Icon, color, bgGlow, anim, desc, temp: clima.temp };
+};
+
+// Helper para traduzir o plano
+const getPlanoLabel = (plano: any) => {
+    switch (String(plano)) {
+        case '0000': return 'TÁTICO / VISUALIZAÇÃO';
+        case '1000': return 'PATRIMONIUM SMART';
+        case '2000': return 'BRONZE';
+        case '3000': return 'PRATA';
+        case '4000': return 'OURO';
+        case '5000': return 'PREMIUM';
+        case '6000': return 'DISPARO POR IMAGEM';
+        case '7000': return 'ANALÍTICO – CFTV';
+        case '8000': return 'ANALÍTICO PLUS – CFTV + ALARME';
+        case '9000': return 'PATRIMONIUM MOBILE';
+        default: return 'GERAL';
+    }
 };
 
 export const DetalhesDisparo = () => {
@@ -191,14 +209,18 @@ export const DetalhesDisparo = () => {
                             <div>
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> Local / Patrimônio</p>
                                 <div className="font-bold text-sm text-slate-300 uppercase leading-snug tracking-wide">{pendencia.endereco}</div>
-                                <div className="text-xs font-black text-brand-red mt-2 tracking-widest">{pendencia.patrimonio}</div>
+                                {pendencia.patrimonio && (
+                                    <div className="inline-block mt-3 px-4 py-1.5 bg-brand-red/20 text-brand-red border border-brand-red/30 rounded-xl shadow-inner text-sm font-black tracking-widest uppercase">
+                                        Patrimônio: {pendencia.patrimonio}
+                                    </div>
+                                )}
                             </div>
 
                             {pendencia.plano_extraido && (
                                 <div className="pb-4">
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Plano Contratado</p>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 shadow-inner">
-                                        <span className="font-black text-[10px] tracking-widest uppercase">{pendencia.plano_extraido}</span>
+                                    <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                        <span className="font-black text-sm tracking-[0.2em] uppercase">{pendencia.plano_extraido}</span>
                                     </div>
                                 </div>
                             )}
@@ -276,25 +298,34 @@ export const DetalhesDisparo = () => {
                                         <h3 className="font-black text-white uppercase tracking-widest italic text-sm">Score de Risco</h3>
                                         <p className="text-sm text-slate-500 font-medium max-w-xs mt-1">Nível de criticidade calculado via algoritmos de Processamento de Linguagem Natural (LLM).</p>
                                         {analise.plano_utilizado && (
-                                            <p className={`text-[10px] font-bold mt-2 uppercase tracking-widest ${eventColors.textColor}`}>
-                                                Agente: Plano {analise.plano_utilizado}
-                                            </p>
+                                            <div className={`mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border ${eventColors.borderColor} shadow-inner`}>
+                                                <Tag className={`w-4 h-4 ${eventColors.textColor}`} />
+                                                <span className={`text-xs font-black uppercase tracking-widest ${eventColors.textColor}`}>
+                                                    Plano {getPlanoLabel(analise.plano_utilizado)}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                     <div className="ml-auto flex items-center justify-end">
                                         {/* INÍCIO INFORMAÇÃO DO CLIMA */}
                                         {(() => {
-                                            // The payload for the AI might not be fully structured identically to TVCockpit, but it resides in analise.evento_enriquecido?.clima or analise.evidencias
-                                            const climaInfo = typeof analise.evento_enriquecido === 'object' ? (analise.evento_enriquecido as any)?.clima : undefined;
+                                            let parsedEnriquecido = analise?.evento_enriquecido;
+                                            if (typeof parsedEnriquecido === 'string') {
+                                                try { parsedEnriquecido = JSON.parse(parsedEnriquecido); } catch (e) { }
+                                            }
+                                            if (typeof parsedEnriquecido === 'string') {
+                                                try { parsedEnriquecido = JSON.parse(parsedEnriquecido); } catch (e) { }
+                                            }
+                                            const climaInfo = (parsedEnriquecido as any)?.clima;
                                             const weather = getWeatherDisplay(climaInfo);
                                             if (weather) {
-                                                const { Icon, color, anim, desc, temp } = weather;
+                                                const { Icon, color, anim, desc, temp, bgGlow } = weather;
                                                 return (
-                                                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md shadow-inner">
-                                                        <Icon className={`w-8 h-8 ${color} ${anim}`} />
-                                                        <div className="flex flex-col items-start leading-none">
-                                                            <span className="text-lg font-black text-white">{temp}°C</span>
-                                                            <span className={`text-xs font-bold uppercase tracking-widest ${color}`}>{desc}</span>
+                                                    <div className={`flex items-center justify-center gap-6 bg-black/95 px-8 py-5 rounded-[2.5rem] border-2 border-white/20 ${bgGlow} transition-all duration-300 scale-110 origin-right`}>
+                                                        <Icon size={56} className={`${color} ${anim}`} style={{ filter: 'drop-shadow(0 0 20px currentColor)' }} />
+                                                        <div className="flex flex-col items-start leading-tight">
+                                                            <span className="text-4xl font-black text-white tracking-tight" style={{ textShadow: '0 4px 15px rgba(255,255,255,0.4)' }}>{temp}°C</span>
+                                                            <span className={`text-[13px] font-black uppercase tracking-[0.25em] mt-1 ${color}`}>{desc}</span>
                                                         </div>
                                                     </div>
                                                 );
