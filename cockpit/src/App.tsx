@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './lib/supabase';
@@ -10,31 +10,10 @@ import { TVCockpit } from './pages/TVCockpit';
 import Relatorios from './pages/Relatorios';
 import { LogOut, Users, BarChart3 } from 'lucide-react';
 import { useUserRole } from './hooks/useUserRole';
+import { useSession } from './hooks/useSession';
 import logo from './assets/logo.png';
-import type { Session } from '@supabase/supabase-js';
 
-// Shared auth context via module-level state
-function useSession() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return session;
-}
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -356,8 +335,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* TV Cockpit — fullscreen, sem layout */}
-        <Route path="/tv" element={<TVCockpit />} />
+        {/* TV Cockpit — fullscreen, sem layout, mas autenticado */}
+        <Route path="/tv" element={<RequireAuth><TVCockpit /></RequireAuth>} />
         {/* App normal com Layout */}
         <Route path="/*" element={
           <Layout>

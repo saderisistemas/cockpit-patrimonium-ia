@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Activity, ChevronLeft, MapPin, BrainCircuit, History, Loader2, Building2, Crosshair, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog } from 'lucide-react';
+import { ShieldCheck, Activity, ChevronLeft, MapPin, BrainCircuit, History, Loader2, Building2, Crosshair, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, RefreshCw } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Pendencia, Analise } from '../lib/api';
 import { supabase } from '../lib/supabase';
@@ -254,8 +254,17 @@ export const DetalhesDisparo = () => {
                                 <BrainCircuit className={`w-8 h-8 ${eventColors.textColor} not-italic`} /> IA <span className={`${eventColors.textColor} not-italic`}>AUDIT</span>
                             </h2>
                             {analise && (
-                                <div className="px-4 py-1.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-2 uppercase tracking-widest animate-in slide-in-from-right duration-500">
-                                    <ShieldCheck className="w-4 h-4" /> Relatório Emitido
+                                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 animate-in slide-in-from-right duration-500">
+                                    <button 
+                                        onClick={handleAnalise}
+                                        disabled={analyzing}
+                                        className="px-4 py-1.5 rounded-full text-[10px] font-black bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 flex items-center gap-2 uppercase tracking-widest transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} /> Reanalisar
+                                    </button>
+                                    <div className="px-4 py-1.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-2 uppercase tracking-widest">
+                                        <ShieldCheck className="w-4 h-4" /> Relatório Emitido
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -287,18 +296,18 @@ export const DetalhesDisparo = () => {
 
                         {analise && !analyzing && (
                             <div className="space-y-8 flex-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                <div className="flex gap-6 items-center p-6 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner">
-                                    <div className={`text-4xl font-black w-24 h-24 flex items-center justify-center rounded-3xl shadow-2xl ${(analise.score || 0) > 70 ? 'bg-brand-red/20 text-brand-red border border-brand-red/30 shadow-brand-red/10' :
+                                <div className="flex flex-col sm:flex-row gap-6 sm:items-center p-6 rounded-2xl bg-white/[0.03] border border-white/5 shadow-inner">
+                                    <div className={`shrink-0 text-4xl font-black w-24 h-24 flex items-center justify-center rounded-3xl shadow-2xl ${(analise.score || 0) > 70 ? 'bg-brand-red/20 text-brand-red border border-brand-red/30 shadow-brand-red/10' :
                                         (analise.score || 0) > 40 ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30 shadow-orange-500/10' :
                                             'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 shadow-emerald-500/10'
                                         }`}>
                                         {analise.score}
                                     </div>
-                                    <div>
+                                    <div className="text-center sm:text-left flex flex-col items-center sm:items-start">
                                         <h3 className="font-black text-white uppercase tracking-widest italic text-sm">Score de Risco</h3>
                                         <p className="text-sm text-slate-500 font-medium max-w-xs mt-1">Nível de criticidade calculado via algoritmos de Processamento de Linguagem Natural (LLM).</p>
                                         {analise.plano_utilizado && (
-                                            <div className={`mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border ${eventColors.borderColor} shadow-inner`}>
+                                            <div className={`mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-black/40 border ${eventColors.borderColor} shadow-inner`}>
                                                 <Tag className={`w-4 h-4 ${eventColors.textColor}`} />
                                                 <span className={`text-xs font-black uppercase tracking-widest ${eventColors.textColor}`}>
                                                     Plano {getPlanoLabel(analise.plano_utilizado)}
@@ -306,7 +315,7 @@ export const DetalhesDisparo = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="ml-auto flex items-center justify-end">
+                                    <div className="mt-4 sm:mt-0 sm:ml-auto flex items-center justify-center sm:justify-end w-full sm:w-auto">
                                         {/* INÍCIO INFORMAÇÃO DO CLIMA */}
                                         {(() => {
                                             let parsedEnriquecido = analise?.evento_enriquecido;
@@ -316,16 +325,19 @@ export const DetalhesDisparo = () => {
                                             if (typeof parsedEnriquecido === 'string') {
                                                 try { parsedEnriquecido = JSON.parse(parsedEnriquecido); } catch (e) { }
                                             }
-                                            const climaInfo = (parsedEnriquecido as any)?.clima;
+                                            let climaInfo = (parsedEnriquecido as any)?.clima;
+                                            if (typeof climaInfo === 'string') {
+                                                try { climaInfo = JSON.parse(climaInfo); } catch (e) { }
+                                            }
                                             const weather = getWeatherDisplay(climaInfo);
                                             if (weather) {
                                                 const { Icon, color, anim, desc, temp, bgGlow } = weather;
                                                 return (
-                                                    <div className={`flex items-center justify-center gap-6 bg-black/95 px-8 py-5 rounded-[2.5rem] border-2 border-white/20 ${bgGlow} transition-all duration-300 scale-110 origin-right`}>
-                                                        <Icon size={56} className={`${color} ${anim}`} style={{ filter: 'drop-shadow(0 0 20px currentColor)' }} />
+                                                    <div className={`flex items-center justify-center gap-4 sm:gap-6 bg-black/95 px-6 sm:px-8 py-4 sm:py-5 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-white/20 ${bgGlow} transition-all duration-300 transform sm:scale-110 sm:origin-right w-full sm:w-auto`}>
+                                                        <Icon size={48} className={`${color} ${anim} shrink-0 sm:w-[56px] sm:h-[56px]`} style={{ filter: 'drop-shadow(0 0 20px currentColor)' }} />
                                                         <div className="flex flex-col items-start leading-tight">
-                                                            <span className="text-4xl font-black text-white tracking-tight" style={{ textShadow: '0 4px 15px rgba(255,255,255,0.4)' }}>{temp}°C</span>
-                                                            <span className={`text-[13px] font-black uppercase tracking-[0.25em] mt-1 ${color}`}>{desc}</span>
+                                                            <span className="text-3xl sm:text-4xl font-black text-white tracking-tight" style={{ textShadow: '0 4px 15px rgba(255,255,255,0.4)' }}>{temp}°C</span>
+                                                            <span className={`text-[11px] sm:text-[13px] font-black uppercase tracking-[0.25em] mt-1 ${color}`}>{desc}</span>
                                                         </div>
                                                     </div>
                                                 );

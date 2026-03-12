@@ -1,0 +1,53 @@
+const catalogoItem = CATALOGO[pendencia.evento_codigo] || null;
+
+const patrimonio = String(pendencia.patrimonio || '').trim().toUpperCase();
+let plano = '1000';
+const regexPlanos = /(0000|1000|2000|3000|4000|5000|6000|7000|8000|9000)/;
+const match = patrimonio.match(regexPlanos);
+if (match) {
+  plano = match[0];
+} else {
+  if (patrimonio.length === 5 && patrimonio.charAt(0) === '1') {
+    const milhar = patrimonio.charAt(1);
+    if (milhar >= '1' && milhar <= '9') {
+      plano = milhar + '000';
+    } else {
+      plano = '1000';
+    }
+  }
+}
+plano = String(plano).trim();
+
+const eventoCatalogo = {
+  codigo: pendencia.evento_codigo,
+  descricao_iris: pendencia.desc_evento || '',
+  descricao_catalogo: catalogoItem ? catalogoItem.desc_evento : 'Nao catalogado',
+  prioridade_catalogo: catalogoItem ? catalogoItem.prioridade : 'nao definida',
+  categoria: catalogoItem ? (catalogoItem.categoria || 'OUTROS') : 'NAO_CATALOGADO',
+  requer_despacho: catalogoItem ? (catalogoItem.requer_despacho || false) : false,
+  catalogado: !!catalogoItem,
+  clima: clima
+};
+
+const historicoFormatado = historico.slice(0, 20).map(h => ({
+  id_disparo: h.id_disparo,
+  evento: h.evento_codigo,
+  desc_evento: h.desc_evento,
+  data: h.data_evento,
+  hora: h.hora_evento,
+  zona: h.zona,
+  setor: h.setor,
+  status: h.status
+}));
+
+return [{
+  json: {
+    plano: plano,
+    evento_enriquecido: eventoCatalogo,
+    pendencia: pendencia,
+    historico: historicoFormatado,
+    total_historico: historico.length,
+    id_disparo: pendencia.id_disparo,
+    id_cliente: pendencia.id_cliente
+  }
+}];

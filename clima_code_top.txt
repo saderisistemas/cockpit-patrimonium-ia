@@ -1,0 +1,33 @@
+const pendencia = $('Get Row Supabase').first().json;
+
+let historico = [];
+try {
+  const histItems = $('Get Supabase History').all().map(i => i.json);
+  historico = histItems.filter(j => j && Object.keys(j).length > 0);
+} catch (e) {
+  historico = [];
+}
+
+
+let clima = "Não disponível";
+try {
+  const weatherData = $('Open-Meteo Weather').first().json;
+  if (weatherData && weatherData.current_weather) {
+    const wcode = weatherData.current_weather.weathercode;
+    const temp = weatherData.current_weather.temperature;
+    const wind = weatherData.current_weather.windspeed;
+
+    let condicao = "Desconhecida";
+    if (wcode === 0) condicao = "Céu Limpo";
+    else if ([1, 2, 3].includes(wcode)) condicao = "Parcialmente Nublado/Nublado";
+    else if ([45, 48].includes(wcode)) condicao = "Neblina";
+    else if ([51, 53, 55, 56, 57].includes(wcode)) condicao = "Garoa/Chuvisco";
+    else if ([61, 63, 65, 66, 67, 80, 81, 82].includes(wcode)) condicao = (wcode === 65 || wcode === 67 || wcode === 82) ? "Chuva Forte" : "Chuva";
+    else if ([71, 73, 75, 77, 85, 86].includes(wcode)) condicao = "Neve";
+    else if ([95, 96, 99].includes(wcode)) condicao = "Tempestade";
+
+    if (temp >= 35) condicao += " - Calor Extremo";
+
+    clima = `Condição: ${condicao}, Temperatura: ${temp}°C, Vento: ${wind}km/h`;
+  }
+} catch (e) { }

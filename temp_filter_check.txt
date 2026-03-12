@@ -1,0 +1,12 @@
+[
+  {
+    "keyName": "patrimonio",
+    "condition": "eq",
+    "keyValue": "={{ $('Webhook App (Analisar)').first().json.body.patrimonio || $('Webhook App (Analisar)').first().json.body.id_cliente || $('Webhook App (Analisar)').first().json.body.idCliente }}"
+  },
+  {
+    "keyName": "data_evento",
+    "condition": "gt",
+    "keyValue": "={{ new Date(new Date().setDate(new Date().getDate() - 7)).toISOString() }}"
+  }
+]

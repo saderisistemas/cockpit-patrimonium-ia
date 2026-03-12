@@ -1,0 +1,19 @@
+{
+  "conditions": [
+    {
+      "keyName": "patrimonio",
+      "condition": "eq",
+      "keyValue": "={{ String($('Get Row Supabase').first().json.patrimonio || '').trim() }}"
+    },
+    {
+      "keyName": "data_evento",
+      "condition": "gte",
+      "keyValue": "={{ new Date(new Date($('Get Row Supabase').first().json.data_evento).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }}"
+    },
+    {
+      "keyName": "id_disparo",
+      "condition": "neq",
+      "keyValue": "={{ $('Get Row Supabase').first().json.id_disparo }}"
+    }
+  ]
+}

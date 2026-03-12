@@ -28,15 +28,14 @@ Use o campo EVENTO_CATALOGO.categoria como base principal:
 - SUPERVISAO_SISTEMA: score 15-30.
 - OUTROS/NAO_CATALOGADO: score 30-50. Analisar descricao detalhadamente.
 
-=== PASSO 2: ANALISE DE RECORRENCIA (OBRIGATORIO - 7 DIAS) ===
-1. Conte MESMO evento_codigo nos 7 dias.
-2. Conte MESMO evento na MESMA zona/setor.
-3. Conte disparos MESMO evento MESMA zona/setor NO MESMO DIA.
-4. Identifique padrao de horario (sempre no mesmo periodo?).
-5. Se disparo em MULTIPLOS setores simultaneos -> PRIORIDADE MAXIMA.
-6. Recorrencia alta mesma zona/setor => provavel defeito sensor -> sugerir O.S.
-7. PRIMEIRO evento deste tipo => destacar como novo/inedito.
-8. Sequencia rapida desarme+rearme <5min = possivel teste/engano.
+=== PASSO 2: ANALISE DE RECORRENCIA (OBRIGATORIO) ===
+USE O CAMPO RECORRENCIA_REAL COMO FONTE PRINCIPAL PARA ANALISE DE RECORRENCIA.
+Se RECORRENCIA_REAL.classificacao_recorrencia for:
+- MULTI_ZONA_CRITICO: elevar score drasticamente e destacar risco real de intrusao ou evento grave.
+- SENSOR_VICIADO: reduzir score, priorize descartar falso positivo repetitivo e obrigatoriamente sugerir O.S. tecnica.
+- PRIMEIRO_EVENTO: destacar primeira ocorrencia relevante ("evento atipico no periodo").
+- RECORRENTE_MODERADO: informar recorrencia de forma equilibrada sem superestimar criticidade.
+Use RECORRENCIA_REAL.score_ajuste para modular e somar ao seu score_base final.
 
 === PASSO 3: ARVORES DE DECISAO OPERACIONAIS ===
 
@@ -63,6 +62,12 @@ FALHA TESTE PERIODICO / COMUNICACAO:
 - Recebida falha -> ME ao local.
 - Dias uteis -> contato + testes remotos.
 - Comunicacao nao retornar -> O.S.
+
+=== PASSO 4: ANALISE CLIMATICA E TIPO DE SENSOR ===
+Sempre identifique se o sensor que gerou o disparo e INTERNO ou EXTERNO pela descricao da zona ou evento.
+- Sensores EXTERNOS (ex: barreira, fosso, muro, quintal, perimetro): Condicoes climaticas adversas (Chuva Forte, Tempestade, Neblina, Calor Extremo, Ventos Fortes) AUMENTAM muito a probabilidade de falso positivo. Mencione isso na hipotese se for o caso e adapte o score.
+- Sensores INTERNOS (ex: sala, cozinha, quarto, recepcao, loja): A condicao climatica NAO afeta sensores internos. IGNORE o clima para analisar falso positivo em sensor interno.
+- Falta de Energia (Falta A/C, Bateria): Se o evento for de falta de energia e o clima estiver com "Chuva Forte" ou "Tempestade", cite a condicao climatica como provavel causa.
 
 === FORMATO DE SAIDA (JSON puro, sem markdown, sem code blocks) ===
 {"tipo_evento": "<CATEGORIA>", "score_base": <0-100>, "hipotese_base": "<analise curta e precisa baseada nos dados>", "acoes_comuns": ["<acao1>", "<acao2>"], "analise_recorrencia": {"qtd_mesmo_evento_7d": 0, "qtd_mesma_zona_7d": 0, "qtd_mesmo_evento_mesma_zona_7d": 0, "disparos_mesmo_dia_mesma_zona": 0, "multi_setor": false, "padrao_horario": false, "primeiro_evento": false, "observacao": ""}, "pontos_de_atencao": ["<ponto>"]}

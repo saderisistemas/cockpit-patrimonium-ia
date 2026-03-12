@@ -46,4 +46,8 @@ Base = ANALISE_GLOBAL.score_base. Formato: "CHECK: ... | DEC: ... | REC: ... | R
 CRITICO: SEJA MUITO CONCISO. Hipotese (max 2 frases), acao (max 1 linha).
 
 ### CONDIÇÕES CLIMÁTICAS
-Caso o evento atual possua informações de clima (payload "clima"), leve isso em consideração na análise. Fatores climáticos severos (chuva forte, vento forte) podem aumentar a chance de falsos positivos, especialmente para sensores em áreas externas, problemas de conexão, ou falhas de energia comercial. Se as condições forem adversas, informe no raciocínio.
+Caso o evento atual possua informações de clima (payload "clima"), leve isso em consideração NA SUA ANÁLISE DE ACORDO COM O TIPO DE SENSOR:
+- SENSORES EXTERNOS (muro, barreira, quintal, perimetro, etc.): Fatores climáticos severos (chuva forte, tempestade, vento forte, calor extremo) AUMENTAM muito a chance de falsos positivos.
+- SENSORES INTERNOS (sala, quarto, recepcao, corredor, etc.): NÃO sofrem interferência climática. IGNORE O CLIMA se o sensor for interno ou não perimetral aberto.
+- FALTAS DE ENERGIA/BATERIA: Podem ser justificadas por chuvas fortes ou tempestades.
+Sempre indique no raciocínio se a condição climática foi um fator agravante (apenas para sensores externos / energia).
