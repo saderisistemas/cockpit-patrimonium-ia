@@ -177,7 +177,8 @@ export const api = {
                 .range(page * pageSize, (page + 1) * pageSize - 1);
 
             if (until) {
-                query = query.lte('data_evento', until);
+                const untilWithTime = until.includes('T') || until.includes(' ') ? until : `${until} 23:59:59`;
+                query = query.lte('data_evento', untilWithTime);
             }
 
             if (eventCode) {

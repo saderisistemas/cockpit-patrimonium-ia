@@ -1,0 +1,76 @@
+Total nodes: 41
+
+--- Nodes ---
+- [n8n-nodes-base.webhook] Webhook App (Analisar)
+- [n8n-nodes-base.supabase] Get Row Supabase
+- [n8n-nodes-base.supabase] Get Supabase History
+- [n8n-nodes-base.code] Enrich + Extrair Plano
+- [n8n-nodes-base.openAi] Agente Global
+- [n8n-nodes-base.code] Merge Global
+- [n8n-nodes-base.switch] Switch Plano
+- [n8n-nodes-base.openAi] Agente 0000
+- [n8n-nodes-base.openAi] Agente 1000
+- [n8n-nodes-base.openAi] Agente 2000
+- [n8n-nodes-base.openAi] Agente 3000
+- [n8n-nodes-base.openAi] Agente 4000
+- [n8n-nodes-base.openAi] Agente 5000
+- [n8n-nodes-base.openAi] Agente 6000
+- [n8n-nodes-base.openAi] Agente 7000
+- [n8n-nodes-base.openAi] Agente 8000
+- [n8n-nodes-base.openAi] Agente 9000
+- [n8n-nodes-base.code] Map IA Result
+- [n8n-nodes-base.supabase] Check Existing Analise
+- [n8n-nodes-base.code] Router Create Update
+- [n8n-nodes-base.if] If
+- [n8n-nodes-base.supabase] Create Analise Supabase
+- [n8n-nodes-base.supabase] Update Analise Supabase
+- [n8n-nodes-base.respondToWebhook] Respond to App
+- [n8n-nodes-base.httpRequest] Geocoding Nominatim
+- [n8n-nodes-base.httpRequest] Open-Meteo Weather
+- [n8n-nodes-base.code] Preparar Histórico 7D
+- [n8n-nodes-base.merge] Merge Clima+Hist
+- [n8n-nodes-base.errorTrigger] Error Trigger
+- [n8n-nodes-base.respondToWebhook] Respond Error to App
+- [n8n-nodes-base.stickyNote] Sticky Note
+- [n8n-nodes-base.stickyNote] Sticky Note1
+- [n8n-nodes-base.stickyNote] Sticky Note2
+- [n8n-nodes-base.stickyNote] Sticky Note3
+- [n8n-nodes-base.stickyNote] Sticky Note4
+- [n8n-nodes-base.stickyNote] Sticky Note5
+- [n8n-nodes-base.stickyNote] Sticky Note6
+- [n8n-nodes-base.stickyNote] Sticky Note7
+- [n8n-nodes-base.stickyNote] Sticky Note8
+- [n8n-nodes-base.stickyNote] Sticky Note9
+- [n8n-nodes-base.code] Resumo Histórico IA
+
+--- Connections (From -> To) ---
+  Agente 0000 -> Map IA Result
+  Agente 1000 -> Map IA Result
+  Agente 2000 -> Map IA Result
+  Agente 3000 -> Map IA Result
+  Agente 4000 -> Map IA Result
+  Agente 5000 -> Map IA Result
+  Agente 6000 -> Map IA Result
+  Agente 7000 -> Map IA Result
+  Agente 8000 -> Map IA Result
+  Agente 9000 -> Map IA Result
+  Agente Global -> Merge Global
+  Check Existing Analise -> Router Create Update
+  Create Analise Supabase -> Respond to App
+  Enrich + Extrair Plano -> Agente Global
+  Get Row Supabase -> Geocoding Nominatim
+  Get Row Supabase -> Preparar Histórico 7D
+  Get Supabase History -> Resumo Histórico IA
+  If -> Create Analise Supabase
+  Map IA Result -> Check Existing Analise
+  Merge Global -> Switch Plano
+  Router Create Update -> If
+  Switch Plano -> Agente 0000
+  Update Analise Supabase -> Respond to App
+  Webhook App (Analisar) -> Get Row Supabase
+  Geocoding Nominatim -> Open-Meteo Weather
+  Open-Meteo Weather -> Merge Clima+Hist
+  Preparar Histórico 7D -> Get Supabase History
+  Merge Clima+Hist -> Enrich + Extrair Plano
+  Error Trigger -> Respond Error to App
+  Resumo Histórico IA -> Merge Clima+Hist
