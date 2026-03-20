@@ -74,7 +74,7 @@ export const Login = () => {
                 letterSpacing: '0.15em',
             }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e', animation: 'pulse 2s infinite' }} />
-                SISTEMA OPERACIONAL — IRIS COCKPIT v1.0
+                SISTEMA OPERACIONAL — COCKPIT IA PATRIMONIUM v1.0
             </div>
 
             {/* Main card */}
@@ -115,7 +115,7 @@ export const Login = () => {
                             textTransform: 'uppercase',
                             lineHeight: 1,
                         }}>
-                            IRIS <span style={{ color: '#8b2323' }}>COCKPIT</span>
+                            COCKPIT <span style={{ color: '#8b2323' }}>IA</span>
                         </div>
                         <div style={{
                             fontFamily: "'JetBrains Mono', monospace",

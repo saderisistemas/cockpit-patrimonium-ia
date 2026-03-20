@@ -8,7 +8,9 @@ import { Login } from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import { TVCockpit } from './pages/TVCockpit';
 import Relatorios from './pages/Relatorios';
-import { LogOut, Users, BarChart3 } from 'lucide-react';
+import { OrdensServico } from './pages/OrdensServico';
+import { DetalheOS } from './pages/DetalheOS';
+import { LogOut, Users, BarChart3, ClipboardList } from 'lucide-react';
 import { useUserRole } from './hooks/useUserRole';
 import { useSession } from './hooks/useSession';
 import logo from './assets/logo.png';
@@ -223,6 +225,39 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             >
               <BarChart3 style={{ width: '12px', height: '12px' }} /> Relatórios & KPIs
             </button>
+            <button
+              onClick={() => navigate('/ordens-servico')}
+              style={{
+                padding: '0.375rem 0.75rem',
+                background: 'rgba(245,158,11,0.05)',
+                border: '1px solid rgba(245,158,11,0.15)',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                color: 'rgba(245,158,11,0.8)',
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.2s',
+                minHeight: '36px',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(245,158,11,1)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(245,158,11,0.4)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.1)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(245,158,11,0.8)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(245,158,11,0.15)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.05)';
+              }}
+            >
+              <ClipboardList style={{ width: '12px', height: '12px' }} /> Ordens de Serviço
+            </button>
             {isAdmin && (
               <button
                 onClick={() => navigate('/usuarios')}
@@ -346,6 +381,8 @@ function App() {
               <Route path="/disparo/:id" element={<RequireAuth><DetalhesDisparo /></RequireAuth>} />
               <Route path="/usuarios" element={<RequireAuth><Usuarios /></RequireAuth>} />
               <Route path="/relatorios" element={<RequireAuth><Relatorios /></RequireAuth>} />
+              <Route path="/ordens-servico" element={<RequireAuth><OrdensServico /></RequireAuth>} />
+              <Route path="/ordens-servico/:id" element={<RequireAuth><DetalheOS /></RequireAuth>} />
             </Routes>
           </Layout>
         } />

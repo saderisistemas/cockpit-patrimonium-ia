@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Activity, ShieldAlert, Search, Trash2 } from 'lucide-react';
+import { Eye, Activity, ShieldAlert, Search, Trash2, AlertTriangle, BrainCircuit, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import type { Pendencia } from '../lib/api';
 import { useUserRole } from '../hooks/useUserRole';
@@ -11,13 +12,20 @@ export const Dashboard = () => {
     const [pendencias, setPendencias] = useState<Pendencia[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [autoAnaliseAtivo, setAutoAnaliseAtivo] = useState(false);
+    const [toggleLoading, setToggleLoading] = useState(false);
     const navigate = useNavigate();
     const { isAdmin } = useUserRole();
 
-    // Filtro estrito para considerar apenas as prioridades visualizadas no painel Iris
+    // Ref para rastrear disparos já enviados e evitar duplicatas durante a sessão
+    const analisesEmAndamento = useRef<Set<string>>(new Set());
+    // Ref para o valor mais recente do toggle (evitar closure stale no callback Realtime)
+    const autoAnaliseRef = useRef(false);
+
+    // Filtro estrito para considerar apenas as prioridades visualizadas no painel
     const isRelevantEvent = (pend: Pendencia) => {
         const prioValue = Number(pend.prioridade);
-        if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') return true;
+        if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301' || pend.evento_codigo === '9558') return true;
         if (pend.evento_codigo === '9065') return true;
         if (pend.evento_codigo?.startsWith('901')) return true;
         if (pend.evento_codigo?.startsWith('E35')) return true;
@@ -50,11 +58,80 @@ export const Dashboard = () => {
         }
     };
 
+    // === AUTO-ANÁLISE E130 ===
+    const dispararAutoAnalise = useCallback(async (pendencia: Pendencia) => {
+        const idDisparo = pendencia.id_disparo;
+        // Prevenir duplicatas na mesma sessão
+        if (analisesEmAndamento.current.has(idDisparo)) return;
+        analisesEmAndamento.current.add(idDisparo);
+
+        try {
+            // Verificar no banco se já existe análise
+            const jaAnalisado = await api.existeAnalise(idDisparo);
+            if (jaAnalisado) {
+                console.log(`[IRIS AUTO] ${idDisparo} já possui análise, ignorando.`);
+                return;
+            }
+
+            console.log(`[IRIS AUTO] Disparando análise automática E130 para ${pendencia.patrimonio} (${idDisparo})`);
+            toast(`🤖 Auto-análise E130 disparada → ${pendencia.patrimonio}`, {
+                icon: '⚡',
+                style: { background: '#1e293b', color: '#fff', border: '1px solid rgba(168,85,247,0.3)' },
+                duration: 4000,
+            });
+
+            await api.solicitarAnalise(pendencia);
+        } catch (err) {
+            console.error('[IRIS AUTO] Erro na auto-análise:', err);
+            toast.error(`Falha na auto-análise de ${pendencia.patrimonio}`);
+        }
+    }, []);
+
+    const handleToggleAutoAnalise = async () => {
+        setToggleLoading(true);
+        try {
+            const novoEstado = !autoAnaliseAtivo;
+            await api.setAutoAnaliseE130(novoEstado);
+            setAutoAnaliseAtivo(novoEstado);
+            autoAnaliseRef.current = novoEstado;
+            toast.success(novoEstado ? '✅ Auto-análise E130 ATIVADA' : '⏸️ Auto-análise E130 DESATIVADA');
+        } catch (err) {
+            console.error('[IRIS] Erro ao alterar toggle:', err);
+            toast.error('Falha ao alterar configuração');
+        } finally {
+            setToggleLoading(false);
+        }
+    };
+
     useEffect(() => {
+        // Carregar estado inicial do toggle
+        api.getAutoAnaliseE130().then((ativo) => {
+            setAutoAnaliseAtivo(ativo);
+            autoAnaliseRef.current = ativo;
+        });
+
         fetchPendencias();
-        // Inicia subscrição Realtime
-        const subscription = api.subscribePendencias(() => {
+
+        // Inicia subscrição Realtime para pendências (com interceptação E130)
+        const subscription = api.subscribePendencias((payload?: unknown) => {
+            // Se é um INSERT e o toggle está ativo, verificar E130
+            const p = payload as { eventType?: string; new?: Pendencia } | undefined;
+            if (p?.eventType === 'INSERT' && p?.new && autoAnaliseRef.current) {
+                const novaPendencia = p.new;
+                if (novaPendencia.evento_codigo === 'E130' && novaPendencia.status === 'pendente') {
+                    dispararAutoAnalise(novaPendencia);
+                }
+            }
             fetchPendencias(); // Recarrega ao receber WebSocket events
+        });
+
+        // Subscrição Realtime para config (sincronizar toggle entre abas)
+        const configSub = api.subscribeConfig((chave, valor) => {
+            if (chave === 'auto_analise_e130') {
+                const ativo = valor === true || valor === 'true';
+                setAutoAnaliseAtivo(ativo);
+                autoAnaliseRef.current = ativo;
+            }
         });
 
         // Polling a cada 60s como fallback caso Realtime desconecte
@@ -64,9 +141,10 @@ export const Dashboard = () => {
 
         return () => {
             subscription.unsubscribe();
+            configSub.unsubscribe();
             clearInterval(pollingInterval);
         };
-    }, []);
+    }, [dispararAutoAnalise]);
 
     // Puxado remotamente de lib
 
@@ -80,15 +158,43 @@ export const Dashboard = () => {
                             INTELIGÊNCIA ARTIFICIAL <span className="text-brand-red not-italic">PATRIMONIUM</span>
                         </h1>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <p className="text-slate-400 font-medium uppercase tracking-[0.2em] md:tracking-[0.3em] text-[9px] md:text-[10px]">Terminal de Monitoramento Iris</p>
+                            <p className="text-slate-400 font-medium uppercase tracking-[0.2em] md:tracking-[0.3em] text-[9px] md:text-[10px]">Terminal de Monitoramento Cockpit IA</p>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live</span>
                             </div>
                         </div>
                     </div>
-                    {/* Action buttons - compact on mobile */}
-                    <div className="flex gap-2 shrink-0">
+                    {/* Action buttons + Auto-análise toggle */}
+                    <div className="flex gap-2 shrink-0 items-start">
+                        {/* Toggle Auto-Análise E130 */}
+                        <button
+                            onClick={handleToggleAutoAnalise}
+                            disabled={toggleLoading}
+                            className={`glass-card p-3 md:px-4 md:py-3 flex flex-col justify-center items-center gap-1 transition-all duration-300 cursor-pointer group min-w-[48px] min-h-[48px] relative overflow-hidden ${
+                                autoAnaliseAtivo
+                                    ? 'border border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/20'
+                                    : 'border border-white/10 hover:bg-white/5'
+                            }`}
+                            title={autoAnaliseAtivo ? 'Desativar auto-análise E130' : 'Ativar auto-análise E130'}
+                        >
+                            {autoAnaliseAtivo && (
+                                <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent" />
+                            )}
+                            {toggleLoading ? (
+                                <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+                            ) : (
+                                <BrainCircuit className={`w-5 h-5 transition-colors relative z-10 ${
+                                    autoAnaliseAtivo ? 'text-purple-400 animate-pulse' : 'text-slate-400 group-hover:text-white'
+                                }`} />
+                            )}
+                            <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest hidden sm:block relative z-10 ${
+                                autoAnaliseAtivo ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-300'
+                            }`}>
+                                {autoAnaliseAtivo ? 'AUTO IA ●' : 'AUTO IA'}
+                            </span>
+                        </button>
+
                         <button
                             onClick={() => { setLoading(true); fetchPendencias(); }}
                             disabled={loading}
@@ -120,9 +226,9 @@ export const Dashboard = () => {
                             <ShieldAlert className="w-5 h-5 md:w-8 md:h-8 text-brand-red" />
                         </div>
                         <div>
-                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Críticos</p>
+                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Suspeitas</p>
                             <p className="text-2xl md:text-3xl font-black text-white tabular-nums">
-                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704' || p.evento_codigo === 'E301').length}
+                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704' || p.evento_codigo === 'E301' || p.evento_codigo === '9558').length}
                             </p>
                         </div>
                     </div>
@@ -173,7 +279,7 @@ export const Dashboard = () => {
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="border-b border-white/5 bg-white/[0.02]">
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Prioridade</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Suspeita</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Timestamp</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Cliente / Patrimônio</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Evento / Zona</th>
@@ -205,6 +311,7 @@ export const Dashboard = () => {
                                             let badgeColor = 'bg-slate-500 text-white';
                                             let prioLabel = prio.label;
                                             if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                            else if (pend.evento_codigo === '9558') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'SUSPEITA CRÍTICA'; }
                                             else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                             else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                             else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
@@ -229,7 +336,14 @@ export const Dashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-3">
                                                         <div className="font-bold">{pend.evento_codigo} {getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento) ? `- ${getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento)}` : ''}</div>
-                                                        <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}</div>
+                                                        <div className="flex flex-col gap-1 mt-1">
+                                                            <div className="text-[10px] opacity-80 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'} {pend.viatura ? `• Viatura: ${pend.viatura}` : ''}</div>
+                                                            {pend.analise_abrir_os && (
+                                                                <div className="inline-flex items-center w-fit gap-1.5 px-2 py-0.5 mt-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
+                                                                    <AlertTriangle className="w-3 h-3" /> OS SOLICITADA
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
                                                         <button onClick={() => navigate(`/disparo/${pend.id_disparo}`)} className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-brand-red text-white text-[10px] font-black uppercase tracking-[0.1em] rounded-lg transition-all duration-300 group/btn border border-white/10 hover:border-brand-red hover:shadow-xl hover:shadow-brand-red/20 min-h-[44px]">
@@ -269,6 +383,7 @@ export const Dashboard = () => {
                                     let badgeColor = 'bg-slate-500 text-white';
                                     let prioLabel = prio.label;
                                     if (pend.evento_codigo === '9704' || pend.evento_codigo === 'E301') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'ENERGIA'; }
+                                    else if (pend.evento_codigo === '9558') { borderColor = 'border-black'; badgeColor = 'bg-black text-[#ff0000] border border-[#ff0000]/50 shadow-[0_0_15px_rgba(255,0,0,0.4)]'; prioLabel = 'SUSPEITA CRÍTICA'; }
                                     else if (pend.evento_codigo === '9065') { borderColor = 'border-[#00e1d9]'; badgeColor = 'bg-[#00e1d9] text-black shadow-[0_0_15px_rgba(0,225,217,0.3)]'; prioLabel = 'DESLOCAMENTO TÁTICO'; }
                                     else if (pend.evento_codigo?.startsWith('901') && !pend.evento_codigo?.startsWith('9015')) { borderColor = 'border-[#00ff00]'; badgeColor = 'bg-[#00ff00] text-black shadow-[0_0_15px_rgba(0,255,0,0.3)]'; prioLabel = 'HÁBITO'; }
                                     else if (pend.evento_codigo?.startsWith('9015') || pend.evento_codigo?.startsWith('E35')) { borderColor = 'border-[#a855f7]'; badgeColor = 'bg-[#a855f7] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'; prioLabel = 'COMUNICAÇÃO'; }
@@ -288,9 +403,14 @@ export const Dashboard = () => {
                                                 <div className="text-xs text-slate-300 font-bold truncate">{pend.nome}</div>
                                             </div>
                                             <div className="flex items-center justify-between gap-2">
-                                                <div className="min-w-0">
+                                                <div className="min-w-0 flex flex-col gap-1">
                                                     <div className="text-xs font-bold text-slate-400 truncate">{pend.evento_codigo} {getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento) ? `- ${getEventDescription(pend.evento_codigo, pend.descricao_catalogo, pend.desc_evento)}` : ''}</div>
                                                     <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest">Zona: {pend.zona || pend.particao || '--'}</div>
+                                                    {pend.analise_abrir_os && (
+                                                        <div className="inline-flex items-center w-fit gap-1.5 px-2 py-0.5 mt-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
+                                                            <AlertTriangle className="w-3 h-3" /> OS SOLICITADA
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <button
                                                     onClick={() => navigate(`/disparo/${pend.id_disparo}`)}

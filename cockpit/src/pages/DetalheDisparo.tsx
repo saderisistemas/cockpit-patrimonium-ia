@@ -45,6 +45,13 @@ const getPlanoLabel = (plano: any) => {
     }
 };
 
+// Helper para corrigir caracteres estranhos provindos da IA (ex: ≥ corrompido para ?)
+export const sanitizeText = (text: string | null | undefined) => {
+    if (!text) return '';
+    // Substitui ? ou U+FFFD por >= (maior ou igual) que é o símbolo geralmente corrompido nesses logs
+    return text.replace(/\?/g, '>=').replace(/\uFFFD/g, '');
+};
+
 export const DetalhesDisparo = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -156,6 +163,13 @@ export const DetalhesDisparo = () => {
     const PrioIcon = prioConfig.icon;
     const eventColors = getEventColors(pendencia.evento_codigo, pendencia.prioridade ?? 5);
 
+    let displayPrioLabel = prioConfig.label;
+    if (pendencia.evento_codigo === '9704' || pendencia.evento_codigo === 'E301') displayPrioLabel = 'ENERGIA';
+    if (pendencia.evento_codigo === '9558') displayPrioLabel = 'PRIORIDADE CRÍTICA';
+    if (pendencia.evento_codigo === '9065') displayPrioLabel = 'DESLOCAMENTO TÁTICO';
+    if (pendencia.evento_codigo?.startsWith('901') && !pendencia.evento_codigo?.startsWith('9015')) displayPrioLabel = 'HÁBITO';
+    if (pendencia.evento_codigo?.startsWith('9015') || pendencia.evento_codigo?.startsWith('E35')) displayPrioLabel = 'COMUNICAÇÃO';
+
     return (
         <div className="p-4 md:p-8 max-w-[1400px] mx-auto min-h-[calc(100vh-4rem)] flex flex-col">
             <button
@@ -180,7 +194,7 @@ export const DetalhesDisparo = () => {
 
                         <div className="space-y-8 relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Protocolo Iris</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Protocolo</p>
                                 <div className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 font-mono font-bold text-white shadow-inner">
                                     {pendencia.id_disparo}
                                 </div>
@@ -193,9 +207,9 @@ export const DetalhesDisparo = () => {
                                     <div className="text-[10px] text-slate-400 font-bold tracking-widest">{pendencia.data_evento}</div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Prioridade</p>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Suspeita</p>
                                     <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border border-red-500/20 bg-red-500/10 text-red-500 shadow-[0_0_15px_rgba(255,0,0,0.15)]`}>
-                                        <PrioIcon className="w-3.5 h-3.5" /> {prioConfig.label}
+                                        <PrioIcon className="w-3.5 h-3.5" /> {displayPrioLabel}
                                     </div>
                                 </div>
                             </div>
@@ -273,7 +287,7 @@ export const DetalhesDisparo = () => {
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-white/[0.02] rounded-3xl border border-dashed border-white/10 relative group">
                                 <BrainCircuit className="w-20 h-20 text-slate-700 mb-6 group-hover:text-purple-500/30 transition-colors duration-500" />
                                 <h3 className="text-xl font-black text-white mb-3 uppercase tracking-tighter italic">Processamento Indisponível</h3>
-                                <p className="text-slate-500 mb-8 max-w-sm font-medium text-sm">O motor de inferência IRIS aguarda instrução para auditoria automatizada deste disparo.</p>
+                                <p className="text-slate-500 mb-8 max-w-sm font-medium text-sm">O motor de inferência IA aguarda instrução para auditoria automatizada deste disparo.</p>
                                 <button
                                     onClick={handleAnalise}
                                     className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl shadow-2xl shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 relative overflow-hidden group/btn min-h-[48px]"
@@ -304,7 +318,7 @@ export const DetalhesDisparo = () => {
                                         {analise.score}
                                     </div>
                                     <div className="text-center sm:text-left flex flex-col items-center sm:items-start">
-                                        <h3 className="font-black text-white uppercase tracking-widest italic text-sm">Score de Risco</h3>
+                                        <h3 className="font-black text-white uppercase tracking-widest italic text-sm">Score de Suspeita</h3>
                                         <p className="text-sm text-slate-500 font-medium max-w-xs mt-1">Nível de criticidade calculado via algoritmos de Processamento de Linguagem Natural (LLM).</p>
                                         {analise.plano_utilizado && (
                                             <div className={`mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-black/40 border ${eventColors.borderColor} shadow-inner`}>
@@ -351,14 +365,14 @@ export const DetalhesDisparo = () => {
                                 <div className="space-y-3">
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">Veredito da IA</h4>
                                     <div className={`text-white text-lg font-bold leading-relaxed ${eventColors.bgColor} p-6 rounded-2xl border-l-[6px] ${eventColors.borderColor} backdrop-blur-sm shadow-sm transition-all duration-500`}>
-                                        {analise.hipotese}
+                                        {sanitizeText(analise.hipotese)}
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-1">Diretriz Operacional</h4>
                                     <div className="bg-brand-dark/50 p-6 rounded-2xl border border-white/5 text-slate-300 font-medium text-sm leading-relaxed italic">
-                                        {analise.acao_recomendada}
+                                        {sanitizeText(analise.acao_recomendada)}
                                     </div>
                                 </div>
 
@@ -370,7 +384,7 @@ export const DetalhesDisparo = () => {
                                                 <div key={idx} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                                                     <span className={`${eventColors.textColor} font-black mt-0.5`}>[E{idx + 1}]</span>
                                                     <span className="text-white/80 font-medium leading-relaxed">
-                                                        {typeof ev === 'string' ? ev : ev.dado || JSON.stringify(ev)}
+                                                        {sanitizeText(typeof ev === 'string' ? ev : ev.dado || JSON.stringify(ev))}
                                                     </span>
                                                 </div>
                                             ))

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog } from 'lucide-react';
+import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, AlertTriangle } from 'lucide-react';
 import logo from '../assets/logo.png';
 import type { Pendencia } from '../lib/api';
 import { getEventColors } from '../lib/eventColors';
@@ -16,6 +16,8 @@ interface AnaliseTV {
     criado_em: string;
     plano_utilizado: string;
     evento_enriquecido?: any;
+    os_status?: string | null;
+    solicitar_os?: boolean | null;
 }
 
 // Helper para traduzir clima
@@ -56,8 +58,8 @@ const getPlanoLabel = (plano: string) => {
 };
 
 const getScoreColor = (score: number) => {
-    if (score >= 70) return { bg: 'from-brand-red/20 to-brand-dark', text: 'text-brand-red', border: 'border-brand-red/30', glow: 'shadow-brand-red/20', label: 'Risco Crítico' };
-    if (score >= 40) return { bg: 'from-orange-500/20 to-brand-dark', text: 'text-orange-500', border: 'border-orange-500/30', glow: 'shadow-orange-500/20', label: 'Risco Moderado' };
+    if (score >= 70) return { bg: 'from-brand-red/20 to-brand-dark', text: 'text-brand-red', border: 'border-brand-red/30', glow: 'shadow-brand-red/20', label: 'Suspeita Crítica' };
+    if (score >= 40) return { bg: 'from-orange-500/20 to-brand-dark', text: 'text-orange-500', border: 'border-orange-500/30', glow: 'shadow-orange-500/20', label: 'Suspeita Moderada' };
     return { bg: 'from-emerald-500/20 to-brand-dark', text: 'text-emerald-500', border: 'border-emerald-500/30', glow: 'shadow-emerald-500/20', label: 'Situação Normal' };
 };
 
@@ -115,7 +117,7 @@ export const TVCockpit = () => {
         if (data) {
             const criticos = data.filter(p => {
                 const prio = Number(p.prioridade);
-                return prio === 0 || prio === 1 || p.evento_codigo === '9704';
+                return prio === 0 || prio === 1 || p.evento_codigo === '9704' || p.evento_codigo === '9558';
             }).length;
             setTotalCriticos(criticos);
             setTotalPendentes(data.length);
@@ -174,7 +176,7 @@ export const TVCockpit = () => {
                     <img src={logo} alt="Patrimonium" className="h-16 drop-shadow-lg" />
                     <div>
                         <div className="text-2xl font-black italic tracking-tight">
-                            <span className="text-white">COCKPIT</span> <span className="text-brand-red">IRIS TV</span>
+                            <span className="text-white">COCKPIT IA</span> <span className="text-brand-red">TV</span>
                         </div>
                         <div className="text-sm font-black text-slate-500 uppercase tracking-[0.4em]">
                             Central Operacional Tática Inteligente
@@ -192,7 +194,7 @@ export const TVCockpit = () => {
                 <div className="flex items-center gap-6">
                     <div className="flex gap-6">
                         <div className="text-right">
-                            <div className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Críticos</div>
+                            <div className="text-[0.65rem] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Suspeitas</div>
                             <div className="text-3xl font-black text-brand-red tabular-nums leading-none">{totalCriticos}</div>
                         </div>
                         <div className="w-px h-8 self-center bg-white/10" />
@@ -304,10 +306,22 @@ export const TVCockpit = () => {
                                             <div className="flex items-center gap-4">
                                                 <span className="text-7xl font-black text-white italic leading-none tracking-tighter">{latest.pendencia?.evento_codigo || "---"}</span>
                                             </div>
-                                            <span className={`text-3xl font-black mt-1 leading-tight ${colors.textColor} max-w-[400px] truncate`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
-                                            {(latest.pendencia?.zona || latest.pendencia?.particao) && (
-                                                <span className="text-xl font-bold text-white/50 mt-1 bg-white/5 px-4 py-1 rounded-lg border border-white/10 uppercase tracking-widest italic">SETOR: {latest.pendencia.zona || latest.pendencia.particao}</span>
-                                            )}
+                                            <span className={`text-3xl font-black mt-1 leading-tight ${colors.textColor} max-w-[400px] text-right truncate`}>{getEventDescription(latest.pendencia?.evento_codigo, latest.pendencia?.descricao_catalogo, latest.pendencia?.desc_evento, "Processando Descrição...")}</span>
+                                            <div className="flex flex-col items-end gap-2 mt-2">
+                                                {(latest.pendencia?.zona || latest.pendencia?.particao) && (
+                                                    <span className="text-xl font-bold text-white/50 bg-white/5 px-4 py-1 rounded-lg border border-white/10 uppercase tracking-widest italic">SETOR: {latest.pendencia.zona || latest.pendencia.particao}</span>
+                                                )}
+                                                {(() => {
+                                                    if (latest.os_status === 'solicitada' || latest.solicitar_os) {
+                                                        return (
+                                                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xl font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
+                                                                <AlertTriangle className="w-5 h-5" /> OS SOLICITADA
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -318,7 +332,7 @@ export const TVCockpit = () => {
                                     <div className={`w-64 shrink-0 bg-gradient-to-br ${getScoreColor(latest.score).bg} ${getScoreColor(latest.score).border} border rounded-3xl p-4 flex flex-col items-center justify-center shadow-2xl ${getScoreColor(latest.score).glow} relative overflow-hidden`}>
                                         <BrainCircuit className="absolute -right-8 -top-8 w-40 h-40 opacity-10" />
                                         <div className={`text-[7.5rem] font-black ${getScoreColor(latest.score).text} tabular-nums leading-none tracking-tighter`}>{latest.score}</div>
-                                        <div className="text-sm font-black uppercase tracking-[0.34em] text-white/50 mt-1">Score de Risco</div>
+                                        <div className="text-sm font-black uppercase tracking-[0.34em] text-white/50 mt-1">Score de Suspeita</div>
                                         <div className={`text-xl font-black uppercase tracking-[0.2em] text-center mt-1 ${getScoreColor(latest.score).text}`}>
                                             {getScoreColor(latest.score).label}
                                         </div>

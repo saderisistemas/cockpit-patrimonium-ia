@@ -178,9 +178,9 @@ export default function Relatorios() {
 
     const kpis = [
         { label: 'Total de Eventos', value: totalEvents.toLocaleString(), icon: BarChart3, color: COLORS.blue, sub: periodLabel, info: 'Soma total de todos os eventos recebidos no período.' },
-        { label: 'Score Médio IA', value: avgScore.toString(), icon: TrendingUp, color: avgScore > 70 ? COLORS.red : avgScore > 40 ? COLORS.amber : COLORS.green, sub: `${analises.length} análises`, info: 'Grau médio de severidade calculado pela IA (varia de 0 a 100).' },
+        { label: 'Score Médio Suspeita', value: avgScore.toString(), icon: TrendingUp, color: avgScore > 70 ? COLORS.red : avgScore > 40 ? COLORS.amber : COLORS.green, sub: `${analises.length} análises`, info: 'Grau médio de severidade calculado pela IA (varia de 0 a 100).' },
         { label: 'Taxa de Fechamento', value: closeRate + '%', icon: CheckCircle2, color: COLORS.green, sub: `${closedCount} de ${totalEvents}`, info: 'Porcentagem de eventos que já foram concluídos/fechados pelo time.' },
-        { label: 'Eventos Críticos', value: criticalCount.toLocaleString(), icon: ShieldAlert, color: COLORS.red, sub: 'Prioridade E/H', info: 'Quantidade de alertas graves (Emergência ou Alta prioridade).' },
+        { label: 'Suspeitas Críticas', value: criticalCount.toLocaleString(), icon: ShieldAlert, color: COLORS.red, sub: 'Nível E/H', info: 'Quantidade de alertas graves (Emergência ou Alta prioridade).' },
     ];
 
     return (
@@ -406,7 +406,7 @@ export default function Relatorios() {
                         </ChartCard>
 
                         {/* Score Distribution */}
-                        <ChartCard title="DISTRIBUIÇÃO SCORE IA" info="Classificação de severidade da IA (Score de 0 a 100) para os eventos analisados no período.">
+                        <ChartCard title="DISTRIBUIÇÃO SCORE SUSPEITA" info="Classificação de severidade da IA (Score de 0 a 100) para os eventos analisados no período.">
                             {scoreDistribution.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={280}>
                                     <PieChart>

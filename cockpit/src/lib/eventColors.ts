@@ -28,8 +28,8 @@ export function getEventColors(evento_codigo?: string, prioridade?: string | num
         };
     }
 
-    // 9704 ou E301 -> Energia (Preto)
-    if (evento_codigo === '9704' || evento_codigo === 'E301') {
+    // 9704 ou E301 ou 9558 -> Energia / Prioridade Crítica (Preto)
+    if (evento_codigo === '9704' || evento_codigo === 'E301' || evento_codigo === '9558') {
         return {
             borderColor: 'border-black',
             bgColor: 'bg-black',

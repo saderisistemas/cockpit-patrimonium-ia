@@ -1,8 +1,11 @@
 import { supabase } from './supabase';
 import type { Database } from '../types/supabase';
 
-export type Pendencia = Database['public']['Tables']['iris_pendencias']['Row'];
+export type Pendencia = Database['public']['Tables']['iris_pendencias']['Row'] & {
+    analise_abrir_os?: boolean;
+};
 export type Analise = Database['public']['Tables']['iris_analises']['Row'];
+export type OrdemServico = Database['public']['Tables']['iris_ordens_servico']['Row'];
 
 export const api = {
     // Buscar pendências ativas (status pendente + últimas 24h)
@@ -18,11 +21,40 @@ export const api = {
             .limit(200);
 
         if (error) throw error;
-        return data as Pendencia[];
+        
+        let pendencias = data as Pendencia[];
+        
+        if (pendencias.length > 0) {
+            const idsDisparo = pendencias.map(p => p.id_disparo);
+            const { data: analises } = await supabase
+                .from('iris_analises')
+                .select('id_disparo, evento_enriquecido')
+                .in('id_disparo', idsDisparo);
+                
+            if (analises && analises.length > 0) {
+                const mapAnalises = new Map();
+                analises.forEach(a => {
+                    let abrirOs = false;
+                    try {
+                        if (a.evento_enriquecido && typeof a.evento_enriquecido === 'object') {
+                            abrirOs = !!(a.evento_enriquecido as any).abrir_os;
+                        }
+                    } catch(e) {}
+                    mapAnalises.set(a.id_disparo, abrirOs);
+                });
+                
+                pendencias = pendencias.map(p => ({
+                    ...p,
+                    analise_abrir_os: mapAnalises.get(p.id_disparo) || false
+                }));
+            }
+        }
+        
+        return pendencias;
     },
 
     // Escutar mudanças em tempo real (WebSockets)
-    subscribePendencias: (onUpdate: () => void) => {
+    subscribePendencias: (onUpdate: (payload?: { eventType: string; new?: Pendencia }) => void) => {
         return supabase
             .channel('schema-db-changes')
             .on(
@@ -30,7 +62,10 @@ export const api = {
                 { event: '*', schema: 'public', table: 'iris_pendencias' },
                 (payload) => {
                     console.log('Realtime change received!', payload);
-                    onUpdate();
+                    onUpdate({
+                        eventType: payload.eventType,
+                        new: payload.new as Pendencia | undefined,
+                    });
                 }
             )
             .subscribe();
@@ -250,5 +285,113 @@ export const api = {
             }
         }
         return allData;
+    },
+
+    // === ORDENS DE SERVIÇO ===
+
+    getOrdensServico: async (filters?: { status_os?: string; prioridade_os?: string; tipo_os?: string }) => {
+        let query = supabase
+            .from('iris_ordens_servico')
+            .select('*')
+            .order('criado_em', { ascending: false })
+            .limit(500);
+
+        if (filters?.status_os) {
+            query = query.eq('status_os', filters.status_os);
+        }
+        if (filters?.prioridade_os) {
+            query = query.eq('prioridade_os', filters.prioridade_os);
+        }
+        if (filters?.tipo_os) {
+            query = query.eq('tipo_os', filters.tipo_os);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data as OrdemServico[];
+    },
+
+    subscribeOrdensServico: (onUpdate: () => void) => {
+        return supabase
+            .channel('ordens-servico-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'iris_ordens_servico' },
+                () => {
+                    onUpdate();
+                }
+            )
+            .subscribe();
+    },
+
+    getOrdemServicoById: async (id: string) => {
+        const { data, error } = await supabase
+            .from('iris_ordens_servico')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (error) throw error;
+        return data as OrdemServico;
+    },
+
+    updateOrdemServico: async (id: string, campos: Partial<Database['public']['Tables']['iris_ordens_servico']['Update']>) => {
+        const { error } = await supabase
+            .from('iris_ordens_servico')
+            .update({ ...campos, atualizado_em: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+        return true;
+    },
+
+    // === CONFIG AUTO-ANÁLISE E130 ===
+
+    getAutoAnaliseE130: async (): Promise<boolean> => {
+        const { data, error } = await supabase
+            .from('iris_config')
+            .select('valor')
+            .eq('chave', 'auto_analise_e130')
+            .single();
+        if (error) {
+            console.warn('[IRIS] Falha ao ler config auto_analise_e130:', error.message);
+            return false;
+        }
+        return data?.valor === true || data?.valor === 'true';
+    },
+
+    setAutoAnaliseE130: async (ativo: boolean): Promise<boolean> => {
+        const { error } = await supabase
+            .from('iris_config')
+            .update({ valor: ativo, atualizado_em: new Date().toISOString() })
+            .eq('chave', 'auto_analise_e130');
+        if (error) throw error;
+        return true;
+    },
+
+    subscribeConfig: (onUpdate: (chave: string, valor: unknown) => void) => {
+        return supabase
+            .channel('config-realtime')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'iris_config' },
+                (payload) => {
+                    const row = payload.new as { chave: string; valor: unknown };
+                    onUpdate(row.chave, row.valor);
+                }
+            )
+            .subscribe();
+    },
+
+    // Verificar se um disparo já possui análise (evitar duplicatas)
+    existeAnalise: async (id_disparo: string): Promise<boolean> => {
+        const { data, error } = await supabase
+            .from('iris_analises')
+            .select('id_analise')
+            .eq('id_disparo', id_disparo)
+            .maybeSingle();
+        if (error) {
+            console.warn('[IRIS] Erro ao verificar análise existente:', error.message);
+            return false;
+        }
+        return !!data;
     },
 };

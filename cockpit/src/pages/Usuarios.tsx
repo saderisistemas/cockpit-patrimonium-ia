@@ -99,7 +99,7 @@ const Usuarios = () => {
                     <h1 className="text-xl md:text-3xl font-black text-white tracking-tight italic">
                         GESTÃO DE <span className="text-brand-red not-italic">OPERADORES</span>
                     </h1>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Administração de acessos do sistema IRIS</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Administração de acessos do sistema COCKPIT IA</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
