@@ -13,18 +13,30 @@ export const Login = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            toast.error('Credencial inválida. Acesso negado.', {
+        try {
+            const { error } = await supabase.auth.signInWithPassword({ 
+                email: email.trim(), 
+                password 
+            });
+            
+            if (error) {
+                toast.error('Credencial inválida ou incorreta. Acesso negado.', {
+                    style: { background: '#1a0a0a', color: '#fff', border: '1px solid #8b2323', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
+                });
+            } else {
+                toast.success('Acesso autorizado. Carregando terminal...', {
+                    style: { background: '#0a1a0a', color: '#4ade80', border: '1px solid #166534', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
+                });
+                navigate('/');
+            }
+        } catch (err) {
+            console.error('Erro no login:', err);
+            toast.error('Erro de conexão ou sistema indisponível.', {
                 style: { background: '#1a0a0a', color: '#fff', border: '1px solid #8b2323', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
             });
-        } else {
-            toast.success('Acesso autorizado. Carregando terminal...', {
-                style: { background: '#0a1a0a', color: '#4ade80', border: '1px solid #166534', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
-            });
-            navigate('/');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
