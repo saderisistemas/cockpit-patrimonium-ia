@@ -117,8 +117,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 color: '#fff',
                 lineHeight: 1,
               }} className="text-[0.7rem] md:text-[1.3rem]">
-                IRIS <span style={{ color: '#8b2323' }}>COCKPIT</span>
-                <span style={{ color: '#8b2323' }} className="hidden sm:inline"> DE EVENTOS REAL TIME</span>
+                COCKPIT <span style={{ color: '#8b2323' }}>IA</span>
+                <span style={{ color: '#8b2323' }} className="hidden sm:inline"> PATRIMONIUM</span>
               </div>
               <div style={{
                 fontFamily: "'JetBrains Mono', monospace",

@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        name: 'IRIS Cockpit - Patrimonium',
-        short_name: 'IRIS Cockpit',
+        name: 'Cockpit IA - Patrimonium',
+        short_name: 'Cockpit IA',
         description: 'Centro de Monitoramento Tático de Eventos Real-Time',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',
