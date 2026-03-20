@@ -11,6 +11,9 @@ export const api = {
     // Buscar pendências ativas (status pendente + últimas 24h)
     getPendencias: async () => {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        console.log('[api.getPendencias] Iniciando select from iris_pendencias (1 dia atrás: ' + oneDayAgo + ')');
+        
+        const startTime = Date.now();
         const { data, error } = await supabase
             .from('iris_pendencias')
             .select('*')
@@ -20,6 +23,8 @@ export const api = {
             .order('capturado_em', { ascending: false })
             .limit(200);
 
+        console.log(`[api.getPendencias] Retorno Supabase em ${Date.now() - startTime}ms. Data length: ${data?.length || 0}. Error: `, error);
+        
         if (error) throw error;
         
         let pendencias = data as Pendencia[];
