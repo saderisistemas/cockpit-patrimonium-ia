@@ -922,18 +922,6 @@
             {
               "fieldId": "operador_solicitante",
               "fieldValue": "={{ $json.operador_solicitante }}"
-            },
-            {
-              "fieldId": "patrimonio_normalizado",
-              "fieldValue": "={{ $json.patrimonio_norm }}"
-            },
-            {
-              "fieldId": "codigo_evento",
-              "fieldValue": "={{ $json.codigo_evento }}"
-            },
-            {
-              "fieldId": "zona",
-              "fieldValue": "={{ $json.zona }}"
             }
           ]
         }
@@ -1288,7 +1276,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const historico = $input.all();\nconst atual = $('Get Row Supabase').first().json;\n\nconst eventoAtual = String(atual.evento_codigo ?? '').trim();\nconst setorAtual = String(atual.setor ?? '').trim();\nconst zonaAtual = String(atual.zona ?? '').trim();\nconst agrupamentoAtual = String(atual.agrupamento ?? '').trim();\n\nconst totalEventos = historico.length;\n\nconst mesmoCodigo = historico.filter(item =>\n  String(item.json.evento_codigo ?? '').trim() === eventoAtual\n).length;\n\nconst mesmoSetor = historico.filter(item =>\n  String(item.json.setor ?? '').trim() === setorAtual\n).length;\n\nconst mesmaZona = historico.filter(item =>\n  String(item.json.zona ?? '').trim() === zonaAtual\n).length;\n\nconst mesmoAgrupamento = historico.filter(item =>\n  String(item.json.agrupamento ?? '').trim() === agrupamentoAtual\n).length;\n\n// Monta contagem por horário HH:MM\nconst contagemHorarios = {};\n\nfor (const item of historico) {\n  const hora = String(item.json.hora_evento ?? '').trim();\n  const hhmm = hora ? hora.slice(0, 5) : 'SEM_HORA';\n  contagemHorarios[hhmm] = (contagemHorarios[hhmm] || 0) + 1;\n}\n\nconst horariosRecorrentes = Object.entries(contagemHorarios)\n  .filter(([hora, qtd]) => hora !== 'SEM_HORA' && qtd >= 2)\n  .map(([hora, qtd]) => ({ hora, quantidade: qtd }))\n  .sort((a, b) => b.quantidade - a.quantidade);\n\n// Eventos relevantes resumidos\nconst eventosRelevantes = historico.slice(0, 20).map(item => ({\n  id_disparo: item.json.id_disparo ?? null,\n  data_evento: item.json.data_evento ?? null,\n  hora_evento: item.json.hora_evento ?? null,\n  evento_codigo: item.json.evento_codigo ?? null,\n  agrupamento: item.json.agrupamento ?? null,\n  setor: item.json.setor ?? null,\n  zona: item.json.zona ?? null,\n  desc_evento: item.json.desc_evento ?? null\n}));\n\n// ═══════════════════════════════════════════════════════════\n// NOVA LÓGICA E130/9013 — Descarte de E130 com 9013 em ≤ 5 min\n// ═══════════════════════════════════════════════════════════\n\n// Filtrar apenas E130 na mesma zona\nconst e130MesmaZona = historico.filter(item => {\n  const cod = String(item.json.evento_codigo ?? '').trim().toUpperCase();\n  const z = String(item.json.zona ?? '').trim();\n  return cod === 'E130' && z === zonaAtual;\n});\n\nconst e130Total7d = e130MesmaZona.length;\n\n// Identificar pares E130→9013 (restauração em ≤ 5 min = abertura+fechamento normal)\nconst todos9013 = historico.filter(item => {\n  const cod = String(item.json.evento_codigo ?? '').trim();\n  return cod === '9013';\n});\n\nlet e130Descartados = 0;\n\nfor (const e130 of e130MesmaZona) {\n  const tsE130 = new Date(e130.json.data_evento + 'T' + (e130.json.hora_evento || '00:00:00'));\n  if (isNaN(tsE130.getTime())) continue;\n\n  const zonaE130 = String(e130.json.zona ?? '').trim();\n\n  // Procurar um 9013 no mesmo patrimônio em até 5 min após o E130\n  const temPar9013 = todos9013.some(r => {\n    const zonaR = String(r.json.zona ?? '').trim();\n    if (zonaR !== zonaE130) return false;\n\n    const tsR = new Date(r.json.data_evento + 'T' + (r.json.hora_evento || '00:00:00'));\n    if (isNaN(tsR.getTime())) return false;\n\n    const diffMs = tsR.getTime() - tsE130.getTime();\n    return diffMs >= 0 && diffMs <= 5 * 60 * 1000; // 0 a 5 min\n  });\n\n  if (temPar9013) e130Descartados++;\n}\n\nconst e130Validos7d = e130Total7d - e130Descartados;\n\n// Dias distintos com E130 válido (sem par 9013)\nconst diasComE130Valido = new Set();\nfor (const e130 of e130MesmaZona) {\n  const tsE130 = new Date(e130.json.data_evento + 'T' + (e130.json.hora_evento || '00:00:00'));\n  if (isNaN(tsE130.getTime())) continue;\n\n  const zonaE130 = String(e130.json.zona ?? '').trim();\n  const temPar = todos9013.some(r => {\n    const zonaR = String(r.json.zona ?? '').trim();\n    if (zonaR !== zonaE130) return false;\n    const tsR = new Date(r.json.data_evento + 'T' + (r.json.hora_evento || '00:00:00'));\n    if (isNaN(tsR.getTime())) return false;\n    const diffMs = tsR.getTime() - tsE130.getTime();\n    return diffMs >= 0 && diffMs <= 5 * 60 * 1000;\n  });\n\n  if (!temPar) {\n    const dia = String(e130.json.data_evento ?? '').slice(0, 10);\n    if (dia) diasComE130Valido.add(dia);\n  }\n}\n\nconst diasDistintosE130Validos7d = diasComE130Valido.size;\n\n// ═══════════════════════════════════════════════════════════\n\nconst primeiraOcorrencia = totalEventos === 0;\nconst recorrenciaElevadaMesmoSetor = mesmoSetor >= 3;\nconst recorrenciaElevadaMesmaZona = mesmaZona >= 3;\nconst recorrenciaElevadaMesmoCodigo = mesmoCodigo >= 3;\n\nlet resumoTexto = '';\n\nif (totalEventos === 0) {\n  resumoTexto = 'Não foram encontrados eventos anteriores para este patrimônio nos últimos 7 dias.';\n} else {\n  resumoTexto =\n    `Foram encontrados ${totalEventos} eventos para este patrimônio nos últimos 7 dias. ` +\n    `${mesmoCodigo} possuem o mesmo código do evento atual (${eventoAtual || 'N/D'}). ` +\n    `${mesmoSetor} ocorreram no mesmo setor (${setorAtual || 'N/D'}). ` +\n    `${mesmaZona} ocorreram na mesma zona (${zonaAtual || 'N/D'}). ` +\n    `${mesmoAgrupamento} pertencem ao mesmo agrupamento (${agrupamentoAtual || 'N/D'}).`;\n\n  if (horariosRecorrentes.length > 0) {\n    const topHorarios = horariosRecorrentes\n      .slice(0, 3)\n      .map(h => `${h.hora} (${h.quantidade}x)`)\n      .join(', ');\n    resumoTexto += ` Há recorrência de horário em: ${topHorarios}.`;\n  }\n\n  if (recorrenciaElevadaMesmoSetor) resumoTexto += ' Há recorrência elevada no mesmo setor.';\n  if (recorrenciaElevadaMesmaZona) resumoTexto += ' Há recorrência elevada na mesma zona.';\n  if (recorrenciaElevadaMesmoCodigo) resumoTexto += ' Há recorrência elevada do mesmo código de evento.';\n\n  if (e130Validos7d > 0) {\n    resumoTexto += ` E130 na mesma zona: ${e130Total7d} total, ${e130Descartados} descartados (9013 em ≤5min), ${e130Validos7d} válidos em ${diasDistintosE130Validos7d} dia(s) distinto(s).`;\n  }\n}\n\nreturn [\n  {\n    json: {\n      historico_resumo: {\n        janela_dias: 7,\n        total_eventos_periodo: totalEventos,\n        mesmo_codigo_evento: mesmoCodigo,\n        mesmo_setor: mesmoSetor,\n        mesma_zona: mesmaZona,\n        mesmo_agrupamento: mesmoAgrupamento,\n        primeira_ocorrencia: primeiraOcorrencia,\n        recorrencia_elevada_mesmo_setor: recorrenciaElevadaMesmoSetor,\n        recorrencia_elevada_mesma_zona: recorrenciaElevadaMesmaZona,\n        recorrencia_elevada_mesmo_codigo: recorrenciaElevadaMesmoCodigo,\n        horarios_recorrentes: horariosRecorrentes,\n        eventos_relevantes: eventosRelevantes,\n        resumo_historico_texto: resumoTexto,\n        // Novos campos E130\n        e130_total_7d: e130Total7d,\n        e130_descartados_9013_5m_7d: e130Descartados,\n        e130_validos_sensor_7d: e130Validos7d,\n        dias_distintos_e130_validos_7d: diasDistintosE130Validos7d\n      }\n    }\n  }\n];"
+        "jsCode": "const historico = $input.all();\nconst atual = $('Get Row Supabase').first().json;\n\nconst eventoAtual = String(atual.evento_codigo ?? '').trim();\nconst setorAtual = String(atual.setor ?? '').trim();\nconst zonaAtual = String(atual.zona ?? '').trim();\nconst agrupamentoAtual = String(atual.agrupamento ?? '').trim();\n\nconst totalEventos = historico.length;\n\nconst mesmoCodigo = historico.filter(item =>\n  String(item.json.evento_codigo ?? '').trim() === eventoAtual\n).length;\n\nconst mesmoSetor = historico.filter(item =>\n  String(item.json.setor ?? '').trim() === setorAtual\n).length;\n\nconst mesmaZona = historico.filter(item =>\n  String(item.json.zona ?? '').trim() === zonaAtual\n).length;\n\nconst mesmoAgrupamento = historico.filter(item =>\n  String(item.json.agrupamento ?? '').trim() === agrupamentoAtual\n).length;\n\n// Monta contagem por horário HH:MM\nconst contagemHorarios = {};\n\nfor (const item of historico) {\n  const hora = String(item.json.hora_evento ?? '').trim();\n  const hhmm = hora ? hora.slice(0, 5) : 'SEM_HORA';\n\n  contagemHorarios[hhmm] = (contagemHorarios[hhmm] || 0) + 1;\n}\n\nconst horariosRecorrentes = Object.entries(contagemHorarios)\n  .filter(([hora, qtd]) => hora !== 'SEM_HORA' && qtd >= 2)\n  .map(([hora, qtd]) => ({ hora, quantidade: qtd }))\n  .sort((a, b) => b.quantidade - a.quantidade);\n\n// Eventos relevantes resumidos\nconst eventosRelevantes = historico.slice(0, 20).map(item => ({\n  id_disparo: item.json.id_disparo ?? null,\n  data_evento: item.json.data_evento ?? null,\n  hora_evento: item.json.hora_evento ?? null,\n  evento_codigo: item.json.evento_codigo ?? null,\n  agrupamento: item.json.agrupamento ?? null,\n  setor: item.json.setor ?? null,\n  zona: item.json.zona ?? null,\n  desc_evento: item.json.desc_evento ?? null\n}));\n\nconst primeiraOcorrencia = totalEventos === 0;\nconst recorrenciaElevadaMesmoSetor = mesmoSetor >= 3;\nconst recorrenciaElevadaMesmaZona = mesmaZona >= 3;\nconst recorrenciaElevadaMesmoCodigo = mesmoCodigo >= 3;\n\nlet resumoTexto = '';\n\nif (totalEventos === 0) {\n  resumoTexto = 'Não foram encontrados eventos anteriores para este patrimônio nos últimos 7 dias.';\n} else {\n  resumoTexto =\n    `Foram encontrados ${totalEventos} eventos para este patrimônio nos últimos 7 dias. ` +\n    `${mesmoCodigo} possuem o mesmo código do evento atual (${eventoAtual || 'N/D'}). ` +\n    `${mesmoSetor} ocorreram no mesmo setor (${setorAtual || 'N/D'}). ` +\n    `${mesmaZona} ocorreram na mesma zona (${zonaAtual || 'N/D'}). ` +\n    `${mesmoAgrupamento} pertencem ao mesmo agrupamento (${agrupamentoAtual || 'N/D'}).`;\n    \n  if (horariosRecorrentes.length > 0) {\n    const topHorarios = horariosRecorrentes\n      .slice(0, 3)\n      .map(h => `${h.hora} (${h.quantidade}x)`)\n      .join(', ');\n\n    resumoTexto += ` Há recorrência de horário em: ${topHorarios}.`;\n  }\n\n  if (recorrenciaElevadaMesmoSetor) {\n    resumoTexto += ' Há recorrência elevada no mesmo setor.';\n  }\n\n  if (recorrenciaElevadaMesmaZona) {\n    resumoTexto += ' Há recorrência elevada na mesma zona.';\n  }\n\n  if (recorrenciaElevadaMesmoCodigo) {\n    resumoTexto += ' Há recorrência elevada do mesmo código de evento.';\n  }\n}\n\nreturn [\n  {\n    json: {\n      historico_resumo: {\n        janela_dias: 7,\n        total_eventos_periodo: totalEventos,\n        mesmo_codigo_evento: mesmoCodigo,\n        mesmo_setor: mesmoSetor,\n        mesma_zona: mesmaZona,\n        mesmo_agrupamento: mesmoAgrupamento,\n        primeira_ocorrencia: primeiraOcorrencia,\n        recorrencia_elevada_mesmo_setor: recorrenciaElevadaMesmoSetor,\n        recorrencia_elevada_mesma_zona: recorrenciaElevadaMesmaZona,\n        recorrencia_elevada_mesmo_codigo: recorrenciaElevadaMesmoCodigo,\n        horarios_recorrentes: horariosRecorrentes,\n        eventos_relevantes: eventosRelevantes,\n        resumo_historico_texto: resumoTexto\n      }\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1301,7 +1289,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const j = $input.item.json;\n\nconst score = Number(j.score || 0);\nconst historico = j.historico_resumo || {};\nconst globalAnalysis = j.global_analysis || {};\nconst recorrencia = globalAnalysis.analise_recorrencia || {};\nconst evento = j.evento_enriquecido || {};\nconst pendencia = j.pendencia || {};\n\nconst codigoEvento =\n  j.codigo_evento ||\n  pendencia.evento_codigo ||\n  evento.codigo ||\n  null;\n\nconst setor =\n  j.setor ||\n  pendencia.setor ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).setor : null) ||\n  null;\n\nconst zona =\n  j.zona ||\n  pendencia.zona ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).zona : null) ||\n  null;\n\nconst patrimonio =\n  j.patrimonio_norm ||\n  j.patrimonio ||\n  pendencia.patrimonio_normalizado ||\n  pendencia.patrimonio ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).patrimonio : null) ||\n  null;\n\nconst endereco =\n  j.endereco ||\n  pendencia.endereco ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).endereco : null) ||\n  null;\n\nconst descricaoEvento =\n  j.descricao_evento ||\n  pendencia.desc_evento ||\n  evento.descricao_iris ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).descEvento : null) ||\n  null;\n\nconst mesmoCodigo7d = Number(historico.mesmo_codigo_evento || recorrencia.qtd_mesmo_evento_7d || 0);\nconst mesmoSetor7d = Number(historico.mesmo_setor || 0);\nconst mesmaZona7d = Number(historico.mesma_zona || recorrencia.qtd_mesma_zona_7d || 0);\n\n// Novos campos E130 do Resumo Histórico IA\nconst e130Validos7d = Number(historico.e130_validos_sensor_7d || 0);\nconst diasDistintosE130Validos7d = Number(historico.dias_distintos_e130_validos_7d || 0);\nconst e130Total7d = Number(historico.e130_total_7d || 0);\nconst e130Descartados7d = Number(historico.e130_descartados_9013_5m_7d || 0);\n\nconst recorrenciaElevadaMesmoSetor = Boolean(historico.recorrencia_elevada_mesmo_setor === true);\nconst recorrenciaElevadaMesmoCodigo = Boolean(historico.recorrencia_elevada_mesmo_codigo === true);\nconst recorrenciaElevadaMesmaZona = Boolean(historico.recorrencia_elevada_mesma_zona === true);\nconst primeiraOcorrencia = Boolean(historico.primeira_ocorrencia === true);\n\nconst hipotese = (j.hipotese || \"\").toLowerCase();\nconst observacaoRecorrencia = (recorrencia.observacao || \"\").toLowerCase();\nconst pontosAtencao = Array.isArray(globalAnalysis.pontos_de_atencao)\n  ? globalAnalysis.pontos_de_atencao.join(\" | \").toLowerCase()\n  : \"\";\n\nlet abrir_os = false;\nlet tipo_os = null;\nlet motivo_os = null;\nlet prioridade_os = \"Baixa\";\nlet categoria_os = null;\nlet detalhe_sensor = null;\nlet grau_suspeita = null;\nlet regra_suspeita_aplicada = null;\n\n// ═══════════════════════════════════════════════════════════\n// REGRA 1 (REVISADA): Suspeita de sensor/zona viciada via E130\n// Usa e130_validos (já descartados os E130 com 9013 em ≤5min)\n// ═══════════════════════════════════════════════════════════\n\nif (String(codigoEvento || '').toUpperCase() === 'E130' && !primeiraOcorrencia) {\n\n  // GRAU ALTA: >12 E130 válidos OU ≥3 dias distintos\n  if (e130Validos7d > 12 || diasDistintosE130Validos7d >= 3) {\n    grau_suspeita = 'alta';\n    regra_suspeita_aplicada = e130Validos7d > 12\n      ? `>12 E130 válidos na mesma zona em 7d (encontrados: ${e130Validos7d})`\n      : `≥3 dias distintos com E130 válido (encontrados: ${diasDistintosE130Validos7d})`;\n    prioridade_os = 'Alta';\n\n  // GRAU MÉDIA: ≥8 E130 válidos em ≥2 dias distintos\n  } else if (e130Validos7d >= 8 && diasDistintosE130Validos7d >= 2) {\n    grau_suspeita = 'media';\n    regra_suspeita_aplicada = `≥8 E130 válidos (${e130Validos7d}) em ≥2 dias distintos (${diasDistintosE130Validos7d})`;\n    prioridade_os = 'Média';\n\n  // GRAU BAIXA: ≥5 E130 válidos na mesma zona\n  } else if (e130Validos7d >= 5) {\n    grau_suspeita = 'baixa';\n    regra_suspeita_aplicada = `≥5 E130 válidos na mesma zona em 7d (encontrados: ${e130Validos7d})`;\n    prioridade_os = 'Baixa';\n\n  // Fallback CORRIGIDO: indicação textual da IA + mínimo de recorrência (>=3 E130 válidos)\n  // Removido fallback sem mínimo que causava OS indevida (ex: disparo 129009319)\n  } else if (\n    e130Validos7d >= 3 && (\n      hipotese.includes(\"sensor\") ||\n      observacaoRecorrencia.includes(\"sensor\") ||\n      pontosAtencao.includes(\"sensor\")\n    )\n  ) {\n    grau_suspeita = 'baixa';\n    regra_suspeita_aplicada = `Indicação textual da IA + >=3 E130 válidos (${e130Validos7d})`;\n    prioridade_os = 'Baixa';\n  }\n\n  if (grau_suspeita) {\n    abrir_os = true;\n    tipo_os = \"Sensor viciado\";\n    categoria_os = \"Manutenção\";\n    detalhe_sensor = `Evento ${codigoEvento}${descricaoEvento ? \" - \" + descricaoEvento.trim() : \"\"}${zona ? \" | zona \" + zona : \"\"}`;\n    motivo_os = `Suspeita de sensor viciado (grau: ${grau_suspeita}). ${regra_suspeita_aplicada}. ${detalhe_sensor}. E130 7d: total=${e130Total7d}, descartados(9013)=${e130Descartados7d}, válidos=${e130Validos7d}, dias distintos=${diasDistintosE130Validos7d}.`;\n  }\n}\n\n// REGRA 2: falha técnica explícita (MANTIDA)\nconst eventoTecnico = [\"9015\", \"E302\", \"E306\", \"E309\", \"E351\"].includes(String(codigoEvento || \"\").toUpperCase());\n\nif (!abrir_os && eventoTecnico && score >= 70) {\n  abrir_os = true;\n  tipo_os = \"Falha técnica\";\n  categoria_os = \"Manutenção\";\n  motivo_os = `Evento técnico ${codigoEvento}${descricaoEvento ? \" - \" + descricaoEvento.trim() : \"\"}${zona ? \" | zona \" + zona : \"\"} com score ${score}.`;\n  prioridade_os = score >= 85 ? \"Alta\" : \"Média\";\n}\n\n// REGRA 3: recorrência operacional anormal (MANTIDA)\nif (!abrir_os && !primeiraOcorrencia && mesmaZona7d >= 5 && score >= 70) {\n  abrir_os = true;\n  tipo_os = \"Inspeção técnica\";\n  categoria_os = \"Verificação\";\n  motivo_os = `Alta recorrência operacional${zona ? \" na zona \" + zona : \"\"}. Histórico 7d: mesma zona=${mesmaZona7d}.`;\n  prioridade_os = \"Média\";\n}\n\nreturn {\n  json: {\n    ...j,\n    codigo_evento: codigoEvento,\n    setor,\n    zona,\n    patrimonio,\n    patrimonio_norm: patrimonio,\n    endereco,\n    descricao_evento: descricaoEvento ? descricaoEvento.trim() : null,\n    abrir_os,\n    tipo_os,\n    categoria_os,\n    motivo_os,\n    prioridade_os,\n    detalhe_sensor,\n    grau_suspeita,\n    regra_suspeita_aplicada,\n    e130_total_7d: e130Total7d,\n    e130_descartados_9013_5m_7d: e130Descartados7d,\n    e130_validos_sensor_7d: e130Validos7d,\n    dias_distintos_e130_validos_7d: diasDistintosE130Validos7d\n  }\n};"
+        "jsCode": "const j = $input.item.json;\n\nconst score = Number(j.score || 0);\nconst historico = j.historico_resumo || {};\nconst globalAnalysis = j.global_analysis || {};\nconst recorrencia = globalAnalysis.analise_recorrencia || {};\nconst evento = j.evento_enriquecido || {};\nconst pendencia = j.pendencia || {};\n\nconst codigoEvento =\n  j.codigo_evento ||\n  pendencia.evento_codigo ||\n  evento.codigo ||\n  null;\n\nconst setor =\n  j.setor ||\n  pendencia.setor ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).setor : null) ||\n  null;\n\nconst zona =\n  j.zona ||\n  pendencia.zona ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).zona : null) ||\n  null;\n\nconst patrimonio =\n  j.patrimonio_norm ||\n  j.patrimonio ||\n  pendencia.patrimonio_normalizado ||\n  pendencia.patrimonio ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).patrimonio : null) ||\n  null;\n\nconst endereco =\n  j.endereco ||\n  pendencia.endereco ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).endereco : null) ||\n  null;\n\nconst descricaoEvento =\n  j.descricao_evento ||\n  pendencia.desc_evento ||\n  evento.descricao_iris ||\n  (pendencia.raw ? JSON.parse(pendencia.raw).descEvento : null) ||\n  null;\n\nconst mesmoCodigo7d = Number(historico.mesmo_codigo_evento || recorrencia.qtd_mesmo_evento_7d || 0);\nconst mesmoSetor7d = Number(historico.mesmo_setor || 0);\nconst mesmaZona7d = Number(historico.mesma_zona || recorrencia.qtd_mesma_zona_7d || 0);\n\nconst recorrenciaElevadaMesmoSetor = Boolean(historico.recorrencia_elevada_mesmo_setor === true);\nconst recorrenciaElevadaMesmoCodigo = Boolean(historico.recorrencia_elevada_mesmo_codigo === true);\nconst recorrenciaElevadaMesmaZona = Boolean(historico.recorrencia_elevada_mesma_zona === true);\nconst primeiraOcorrencia = Boolean(historico.primeira_ocorrencia === true);\n\nconst hipotese = (j.hipotese || \"\").toLowerCase();\nconst observacaoRecorrencia = (recorrencia.observacao || \"\").toLowerCase();\nconst pontosAtencao = Array.isArray(globalAnalysis.pontos_de_atencao)\n  ? globalAnalysis.pontos_de_atencao.join(\" | \").toLowerCase()\n  : \"\";\n\nlet abrir_os = false;\nlet tipo_os = null;\nlet motivo_os = null;\nlet prioridade_os = \"Baixa\";\nlet categoria_os = null;\nlet detalhe_sensor = null;\n\n// REGRA 1: possível sensor viciado\nconst suspeitaSensorViciado =\n  codigoEvento === \"E130\" &&\n  !primeiraOcorrencia &&\n  (\n    recorrenciaElevadaMesmoSetor ||\n    recorrenciaElevadaMesmoCodigo ||\n    recorrenciaElevadaMesmaZona ||\n    mesmoCodigo7d >= 3 ||\n    mesmoSetor7d >= 4 ||\n    mesmaZona7d >= 2 ||\n    hipotese.includes(\"sensor\") ||\n    observacaoRecorrencia.includes(\"sensor\") ||\n    pontosAtencao.includes(\"sensor\")\n  );\n\nif (suspeitaSensorViciado) {\n  abrir_os = true;\n  tipo_os = \"Sensor viciado\";\n  categoria_os = \"Manutenção\";\n\n  detalhe_sensor = `Evento ${codigoEvento}${descricaoEvento ? \" - \" + descricaoEvento.trim() : \"\"}${zona ? \" | zona \" + zona : \"\"}`;\n\n  motivo_os = `Recorrência com indício de sensor viciado. ${detalhe_sensor}. Histórico 7d: mesmo código=${mesmoCodigo7d}, mesma zona=${mesmaZona7d}.`;\n  prioridade_os = mesmaZona7d >= 10 || mesmoCodigo7d >= 10 ? \"Alta\" : \"Média\";\n}\n\n// REGRA 2: falha técnica explícita\nconst eventoTecnico = [\"9015\", \"E302\", \"E306\", \"E309\", \"E351\"].includes(String(codigoEvento || \"\").toUpperCase());\n\nif (!abrir_os && eventoTecnico && score >= 70) {\n  abrir_os = true;\n  tipo_os = \"Falha técnica\";\n  categoria_os = \"Manutenção\";\n  motivo_os = `Evento técnico ${codigoEvento}${descricaoEvento ? \" - \" + descricaoEvento.trim() : \"\"}${zona ? \" | zona \" + zona : \"\"} com score ${score}.`;\n  prioridade_os = score >= 85 ? \"Alta\" : \"Média\";\n}\n\n// REGRA 3: recorrência operacional anormal\nif (!abrir_os && !primeiraOcorrencia && mesmaZona7d >= 5 && score >= 70) {\n  abrir_os = true;\n  tipo_os = \"Inspeção técnica\";\n  categoria_os = \"Verificação\";\n  motivo_os = `Alta recorrência operacional${zona ? \" na zona \" + zona : \"\"}. Histórico 7d: mesma zona=${mesmaZona7d}.`;\n  prioridade_os = \"Média\";\n}\n\nreturn {\n  json: {\n    ...j,\n    codigo_evento: codigoEvento,\n    setor,\n    zona,\n    patrimonio,\n    patrimonio_norm: patrimonio,\n    endereco,\n    descricao_evento: descricaoEvento ? descricaoEvento.trim() : null,\n    abrir_os,\n    tipo_os,\n    categoria_os,\n    motivo_os,\n    prioridade_os,\n    detalhe_sensor\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1505,46 +1493,6 @@
             {
               "fieldId": "origem",
               "fieldValue": "IRIS"
-            },
-            {
-              "fieldId": "grau_suspeita",
-              "fieldValue": "={{ $json.grau_suspeita }}"
-            },
-            {
-              "fieldId": "score_ia",
-              "fieldValue": "={{ $json.score }}"
-            },
-            {
-              "fieldId": "hipotese_ia",
-              "fieldValue": "={{ $json.hipotese }}"
-            },
-            {
-              "fieldId": "regra_suspeita_aplicada",
-              "fieldValue": "={{ $json.regra_suspeita_aplicada }}"
-            },
-            {
-              "fieldId": "e130_total_7d",
-              "fieldValue": "={{ $json.e130_total_7d }}"
-            },
-            {
-              "fieldId": "e130_descartados_9013_5m_7d",
-              "fieldValue": "={{ $json.e130_descartados_9013_5m_7d }}"
-            },
-            {
-              "fieldId": "e130_validos_sensor_7d",
-              "fieldValue": "={{ $json.e130_validos_sensor_7d }}"
-            },
-            {
-              "fieldId": "dias_distintos_e130_validos_7d",
-              "fieldValue": "={{ $json.dias_distintos_e130_validos_7d }}"
-            },
-            {
-              "fieldId": "operador_solicitante",
-              "fieldValue": "={{ $json.operador_solicitante }}"
-            },
-            {
-              "fieldId": "setor",
-              "fieldValue": "={{ $json.setor }}"
             }
           ]
         }
@@ -1580,237 +1528,40 @@
       "name": "Merge OS Contexto"
     },
     {
-      "id": "1e32833f-3b7b-4134-a971-b1542ece2e50",
-      "name": "Gate E130 Prep",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1860,
-        -112
-      ],
       "parameters": {
-        "jsCode": "// Gate E130 — Preparar dados mínimos para verificação de cooldown\nconst row = $('Get Row Supabase').first().json;\n\nconst codigoEvento = String(row.evento_codigo ?? '').trim().toUpperCase();\nconst patrimonioNorm = String(row.patrimonio_normalizado ?? row.patrimonio ?? '')\n  .normalize('NFKC').trim().toUpperCase().replace(/\\s+/g, ' ');\nconst zona = String(row.zona ?? '').trim();\n\nconst isE130 = codigoEvento === 'E130';\n\n// Timestamps para cooldowns\nconst agora = new Date();\nconst cooldown60m = new Date(agora.getTime() - 60 * 60 * 1000).toISOString();\nconst cooldown48h = new Date(agora.getTime() - 48 * 60 * 60 * 1000).toISOString();\n\nreturn [{\n  json: {\n    ...row,\n    _gate: {\n      is_e130: isE130,\n      patrimonio_norm: patrimonioNorm,\n      zona: zona,\n      codigo_evento: codigoEvento,\n      cooldown_60m_iso: cooldown60m,\n      cooldown_48h_iso: cooldown48h\n    }\n  }\n}];"
-      }
-    },
-    {
-      "id": "6f46704f-acf1-434d-ad7f-c7bfad857da4",
-      "name": "É E130?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        -1720,
-        -112
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "d551f5a4-5298-43fe-903e-138095fe9209",
-              "leftValue": "={{ $json._gate.is_e130 }}",
-              "rightValue": "true",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
+        "resource": "table",
+        "workbook": {
+          "__rl": true,
+          "value": "77590FA218C6E7A0!safe3651ac8a04d0081e7505dc36e5d65",
+          "mode": "list",
+          "cachedResultName": "OS !!! NOVO",
+          "cachedResultUrl": "https://onedrive.live.com/personal/77590fa218c6e7a0/_layouts/15/doc.aspx?resid=afe3651a-c8a0-4d00-81e7-505dc36e5d65&cid=77590fa218c6e7a0"
+        },
+        "worksheet": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
         },
         "options": {}
-      }
-    },
-    {
-      "id": "38198e6b-3acb-411e-8aa0-fd1aeeff1a8d",
-      "name": "Check Cooldown Analise 60m",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        -1540,
-        -20
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "8hyiuJeUM9Khn0Tk",
-          "name": "Supabase Iris Agente"
-        }
       },
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "iris_analises",
-        "limit": 1,
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "patrimonio_normalizado",
-              "condition": "eq",
-              "keyValue": "={{ $json._gate.patrimonio_norm }}"
-            },
-            {
-              "keyName": "codigo_evento",
-              "condition": "eq",
-              "keyValue": "E130"
-            },
-            {
-              "keyName": "criado_em",
-              "condition": "gte",
-              "keyValue": "={{ $json._gate.cooldown_60m_iso }}"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "9d22062c-c42f-4cde-8490-67a9a0161b55",
-      "name": "Check Cooldown OS 48h",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.2,
       "position": [
-        -1540,
-        -200
+        2368,
+        -240
       ],
+      "id": "73deec96-9d39-4a41-ad53-0b8e4df6211f",
+      "name": "Append rows to table",
       "credentials": {
-        "supabaseApi": {
-          "id": "8hyiuJeUM9Khn0Tk",
-          "name": "Supabase Iris Agente"
+        "microsoftExcelOAuth2Api": {
+          "id": "SIntRix6rSVyacLd",
+          "name": "Microsoft Excel osacompanhamentos"
         }
-      },
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "iris_ordens_servico",
-        "limit": 1,
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "patrimonio_normalizado",
-              "condition": "eq",
-              "keyValue": "={{ $json._gate.patrimonio_norm }}"
-            },
-            {
-              "keyName": "zona",
-              "condition": "eq",
-              "keyValue": "={{ $json._gate.zona }}"
-            },
-            {
-              "keyName": "tipo_os",
-              "condition": "eq",
-              "keyValue": "Sensor viciado"
-            },
-            {
-              "keyName": "status_os",
-              "condition": "eq",
-              "keyValue": "aberta"
-            },
-            {
-              "keyName": "criado_em",
-              "condition": "gte",
-              "keyValue": "={{ $json._gate.cooldown_48h_iso }}"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "6f59e9dc-f0ee-422d-8b67-fa980c108791",
-      "name": "Merge Cooldowns",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [
-        -1340,
-        -112
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      }
-    },
-    {
-      "id": "31acab8c-12b5-4a81-9863-46ee01580883",
-      "name": "Avaliar Cooldowns",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1180,
-        -112
-      ],
-      "parameters": {
-        "jsCode": "// Avaliar os resultados dos cooldowns E130\nconst gateData = $('Gate E130 Prep').first().json;\nconst analiseItems = $('Check Cooldown Analise 60m').all();\nconst osItems = $('Check Cooldown OS 48h').all();\n\n// Verificar se há análise recente (60 min)\nconst temAnaliseRecente = analiseItems.length > 0 && \n  analiseItems.some(i => i.json && Object.keys(i.json).length > 0 && i.json.id);\n\n// Verificar se há OS recente (48h)\nconst temOSRecente = osItems.length > 0 && \n  osItems.some(i => i.json && Object.keys(i.json).length > 0 && i.json.id);\n\nconst bloqueado = temAnaliseRecente || temOSRecente;\n\nlet motivoBloqueio = null;\nif (temAnaliseRecente && temOSRecente) {\n  motivoBloqueio = 'Análise recente (60m) e OS aberta (48h) já existem para este contexto E130.';\n} else if (temAnaliseRecente) {\n  motivoBloqueio = 'Análise recente (60m) já existe para este contexto E130.';\n} else if (temOSRecente) {\n  motivoBloqueio = 'OS aberta (48h) já existe para este contexto E130.';\n}\n\nreturn [{\n  json: {\n    ...gateData,\n    _gate: {\n      ...gateData._gate,\n      bloqueado: bloqueado,\n      motivo_bloqueio: motivoBloqueio,\n      tem_analise_recente: temAnaliseRecente,\n      tem_os_recente: temOSRecente\n    }\n  }\n}];"
-      }
-    },
-    {
-      "id": "91faa7ca-eab3-405c-85d7-c91f90938022",
-      "name": "Bloqueado por Cooldown?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        -1020,
-        -112
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "a3e1d676-e109-46d3-804c-268d89ad9177",
-              "leftValue": "={{ $json._gate.bloqueado }}",
-              "rightValue": "true",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "bd1b66bb-0eb0-4bca-8086-ef61ae8017d1",
-      "name": "Respond Bloqueado",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        -860,
-        -200
-      ],
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{\n  JSON.stringify({\n    status: \"bloqueado_cooldown\",\n    motivo: $json._gate.motivo_bloqueio,\n    patrimonio: $json._gate.patrimonio_norm,\n    zona: $json._gate.zona,\n    codigo_evento: $json._gate.codigo_evento\n  })\n}}",
-        "options": {
-          "responseCode": 200
-        }
-      }
-    },
-    {
-      "id": "38e2c178-7213-4495-b160-22ab8f1c2f36",
-      "name": "Sticky Note Gate",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -1880,
-        -320
-      ],
-      "parameters": {
-        "content": "## ⚡ Gate E130 — Triagem Inicial\n\nBloqueia E130 repetidos para:\n- Economizar tokens de IA\n- Evitar reprocessamento\n\n**Cooldowns:**\n- Análise IA: 60 minutos\n- OS aberta: 48 horas",
-        "width": 300,
-        "height": 200,
-        "color": 4
       }
     }
   ],
@@ -2028,6 +1779,22 @@
         [
           {
             "node": "Agente Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Row Supabase": {
+      "main": [
+        [
+          {
+            "node": "Geocoding Nominatim",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Histórico 7D",
             "type": "main",
             "index": 0
           }
@@ -2345,120 +2112,9 @@
     },
     "Create a row": {
       "main": [
-        []
-      ]
-    },
-    "Get Row Supabase": {
-      "main": [
         [
           {
-            "node": "Gate E130 Prep",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gate E130 Prep": {
-      "main": [
-        [
-          {
-            "node": "É E130?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "É E130?": {
-      "main": [
-        [
-          {
-            "node": "Check Cooldown Analise 60m",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Check Cooldown OS 48h",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Geocoding Nominatim",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Preparar Histórico 7D",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Cooldown Analise 60m": {
-      "main": [
-        [
-          {
-            "node": "Merge Cooldowns",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Cooldown OS 48h": {
-      "main": [
-        [
-          {
-            "node": "Merge Cooldowns",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Cooldowns": {
-      "main": [
-        [
-          {
-            "node": "Avaliar Cooldowns",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Avaliar Cooldowns": {
-      "main": [
-        [
-          {
-            "node": "Bloqueado por Cooldown?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Bloqueado por Cooldown?": {
-      "main": [
-        [
-          {
-            "node": "Respond Bloqueado",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Geocoding Nominatim",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Preparar Histórico 7D",
+            "node": "Append rows to table",
             "type": "main",
             "index": 0
           }

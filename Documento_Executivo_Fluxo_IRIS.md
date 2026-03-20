@@ -34,6 +34,16 @@ Com o diagnóstico detalhado em mãos:
 3. Por fim, ele **devolve um sinal de sucesso ao aplicativo**, confirmando que a inteligência processou os dados e o sistema está pronto.
    - *Nota de Segurança:* Se algo der errado no percurso, um **Gatilho de Erro** entra em ação e notifica o aplicativo automaticamente para garantir total transparência.
 
+## 5. Abertura Automática de Ordens de Serviço (OS)
+Após o registro da análise, o sistema avalia se há necessidade de ação técnica em campo:
+
+1. **Decisão Inteligente:** Um módulo de código analisa os resultados da IA e decide se uma OS deve ser aberta. Critérios incluem problemas de sensores, falhas técnicas e eventos recorrentes.
+2. **Janela Anti-Duplicação (48h):** Antes de criar uma nova OS, o sistema verifica se já existe uma OS aberta para o mesmo patrimônio nas últimas 48 horas, evitando duplicações.
+3. **Registro Duplo:**
+   - **Supabase:** A OS é registrada na tabela `iris_ordens_servico` com todos os dados contextuais (patrimônio, evento, zona, tipo, categoria, motivo, prioridade e origem "IRIS").
+   - **Excel (OneDrive):** Uma cópia é inserida em planilha Excel para acompanhamento gerencial paralelo.
+4. **Acompanhamento em Tempo Real:** O **Cockpit IRIS** dispõe de uma página dedicada (`/ordens-servico`) para visualizar, filtrar e acompanhar todas as OS geradas, com atualização automática via Realtime.
+
 ---
 **Resumo do Valor Entregue:** 
-O fluxo do IRIS transforma um simples chamado do aplicativo em uma robusta máquina de avaliação, consumindo dados externos (clima), entendendo o contexto temporal (histórico) e escalando decisões através de IAs que operam como Auditores Especialistas e Globais em frações de segundos.
+O fluxo do IRIS transforma um simples chamado do aplicativo em uma robusta máquina de avaliação, consumindo dados externos (clima), entendendo o contexto temporal (histórico) e escalando decisões através de IAs que operam como Auditores Especialistas e Globais em frações de segundos. Agora, com o pipeline de OS integrado, o sistema também **aciona ações corretivas de forma autônoma**, gerando ordens de serviço quando identifica necessidade de intervenção técnica.

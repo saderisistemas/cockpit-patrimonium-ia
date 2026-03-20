@@ -1,0 +1,34 @@
+﻿const row = $('Get Row Supabase').first().json;
+
+const patrimonioNorm = String(
+  row.patrimonio_normalizado ?? row.patrimonio ?? ''
+)
+  .normalize('NFKC')
+  .trim()
+  .toUpperCase()
+  .replace(/\s+/g, ' ');
+
+const agoraWorkflow = new Date();
+const dataInicio = new Date(agoraWorkflow.getTime() - 7 * 24 * 60 * 60 * 1000);
+const dataEvento = row.data_evento ? new Date(row.data_evento) : null;
+
+// Fun��o para retornar somente YYYY-MM-DD
+const toDateOnly = (date) => {
+  return date.toISOString().slice(0, 10);
+};
+
+return [
+  {
+    json: {
+      patrimonio_norm: patrimonioNorm,
+      data_inicio_hist: dataInicio.toISOString(),
+      data_fim_hist: agoraWorkflow.toISOString(),
+      data_inicio_hist_date: toDateOnly(dataInicio),
+      data_fim_hist_date: toDateOnly(agoraWorkflow),
+      agora_workflow: agoraWorkflow.toISOString(),
+      data_evento_referencia: dataEvento ? dataEvento.toISOString() : null,
+      id_disparo_atual: row.id_disparo ?? null,
+      id_cliente_atual: row.id_cliente ?? null
+    }
+  }
+];
