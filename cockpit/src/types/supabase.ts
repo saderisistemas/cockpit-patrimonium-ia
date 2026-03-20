@@ -76,38 +76,38 @@ export interface Database {
             };
             iris_analises: {
                 Row: {
-                    id_analise: string;
+                    id: string;
                     id_disparo: string;
                     score: number | null;
                     hipotese: string | null;
                     acao_recomendada: string | null;
                     evidencias: Json | null;
                     agrupamento: string | null;
-                    analisado_em: string | null;
+                    criado_em: string | null;
                     operador_solicitante: string | null;
                     plano_utilizado: string | null;
                     evento_enriquecido: Json | null;
                 };
                 Insert: {
-                    id_analise?: string;
+                    id?: string;
                     id_disparo: string;
                     score?: number | null;
                     hipotese?: string | null;
                     acao_recomendada?: string | null;
                     evidencias?: Json | null;
                     agrupamento?: string | null;
-                    analisado_em?: string | null;
+                    criado_em?: string | null;
                     operador_solicitante?: string | null;
                 };
                 Update: {
-                    id_analise?: string;
+                    id?: string;
                     id_disparo?: string;
                     score?: number | null;
                     hipotese?: string | null;
                     acao_recomendada?: string | null;
                     evidencias?: Json | null;
                     agrupamento?: string | null;
-                    analisado_em?: string | null;
+                    criado_em?: string | null;
                     operador_solicitante?: string | null;
                     plano_utilizado?: string | null;
                     evento_enriquecido?: Json | null;

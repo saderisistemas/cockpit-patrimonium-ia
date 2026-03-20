@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Activity, ShieldAlert, Search, Trash2, AlertTriangle, BrainCircuit, Loader2 } from 'lucide-react';
+import { Eye, Activity, ShieldAlert, Search, Trash2, AlertTriangle, BrainCircuit, Loader2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import type { Pendencia } from '../lib/api';
@@ -170,18 +170,22 @@ export const Dashboard = () => {
                         {/* Toggle Auto-Análise E130 */}
                         <button
                             onClick={handleToggleAutoAnalise}
-                            disabled={toggleLoading}
+                            disabled={toggleLoading || !isAdmin}
                             className={`glass-card p-3 md:px-4 md:py-3 flex flex-col justify-center items-center gap-1 transition-all duration-300 cursor-pointer group min-w-[48px] min-h-[48px] relative overflow-hidden ${
-                                autoAnaliseAtivo
-                                    ? 'border border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/20'
-                                    : 'border border-white/10 hover:bg-white/5'
+                                !isAdmin
+                                    ? 'border border-slate-500/50 bg-slate-500/10 opacity-50 cursor-not-allowed'
+                                    : autoAnaliseAtivo
+                                        ? 'border border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/20'
+                                        : 'border border-white/10 hover:bg-white/5'
                             }`}
-                            title={autoAnaliseAtivo ? 'Desativar auto-análise E130' : 'Ativar auto-análise E130'}
+                            title={!isAdmin ? 'Apenas administradores podem alterar o status' : autoAnaliseAtivo ? 'Desativar auto-análise E130' : 'Ativar auto-análise E130'}
                         >
-                            {autoAnaliseAtivo && (
+                            {autoAnaliseAtivo && isAdmin && (
                                 <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent" />
                             )}
-                            {toggleLoading ? (
+                            {!isAdmin ? (
+                                <Lock className="w-5 h-5 text-slate-500 relative z-10" />
+                            ) : toggleLoading ? (
                                 <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
                             ) : (
                                 <BrainCircuit className={`w-5 h-5 transition-colors relative z-10 ${
@@ -189,9 +193,9 @@ export const Dashboard = () => {
                                 }`} />
                             )}
                             <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest hidden sm:block relative z-10 ${
-                                autoAnaliseAtivo ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-300'
+                                !isAdmin ? 'text-slate-500' : autoAnaliseAtivo ? 'text-purple-400' : 'text-slate-500 group-hover:text-slate-300'
                             }`}>
-                                {autoAnaliseAtivo ? 'AUTO IA ●' : 'AUTO IA'}
+                                {!isAdmin ? 'BLOQUEADO' : autoAnaliseAtivo ? 'AUTO IA ●' : 'AUTO IA'}
                             </span>
                         </button>
 

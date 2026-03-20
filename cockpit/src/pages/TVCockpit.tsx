@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, AlertTriangle } from 'lucide-react';
+import { BrainCircuit, ShieldAlert, Activity, Crosshair, Building2, Tag, Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, AlertTriangle, Wrench } from 'lucide-react';
 import logo from '../assets/logo.png';
 import type { Pendencia } from '../lib/api';
 import { getEventColors } from '../lib/eventColors';
@@ -70,6 +70,15 @@ const formatTime = (isoString: string) => {
 
 type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'descricao_catalogo' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'zona' | 'agrupamento' | 'prioridade'>;
 
+const osStatusColors: Record<string, string> = {
+    solicitada: 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,1)] animate-[pulse_0.6s_ease-in-out_infinite]',
+    criada: 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,1)] animate-[pulse_0.6s_ease-in-out_infinite]',
+    aberta: 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,1)] animate-[pulse_0.6s_ease-in-out_infinite]',
+    falha: 'bg-red-600 text-white border-red-500 shadow-[0_0_50px_rgba(220,38,38,1)] animate-[pulse_0.6s_ease-in-out_infinite]',
+    recusada: 'bg-red-600 text-white border-red-500 shadow-[0_0_50px_rgba(220,38,38,0.8)]',
+    default: 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,1)] animate-[pulse_0.6s_ease-in-out_infinite]'
+};
+
 export const TVCockpit = () => {
     const [analises, setAnalises] = useState<(AnaliseTV & { pendencia?: PendenciaSimples })[]>([]);
     const [isNew, setIsNew] = useState(false);
@@ -99,7 +108,14 @@ export const TVCockpit = () => {
                     .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade')
                     .eq('id_disparo', analise.id_disparo)
                     .maybeSingle();
-                return { ...analise, pendencia: pend || undefined };
+
+                const { data: ordem } = await supabase
+                    .from('iris_ordens_servico')
+                    .select('status_os')
+                    .eq('id_disparo', analise.id_disparo)
+                    .maybeSingle();
+
+                return { ...analise, pendencia: pend || undefined, os_status: ordem?.status_os || null };
             })
         );
 
@@ -312,10 +328,32 @@ export const TVCockpit = () => {
                                                     <span className="text-xl font-bold text-white/50 bg-white/5 px-4 py-1 rounded-lg border border-white/10 uppercase tracking-widest italic">SETOR: {latest.pendencia.zona || latest.pendencia.particao}</span>
                                                 )}
                                                 {(() => {
-                                                    if (latest.os_status === 'solicitada' || latest.solicitar_os) {
+                                                    let abrirOs = false;
+                                                    if (latest?.evento_enriquecido) {
+                                                        let parsed = latest.evento_enriquecido;
+                                                        if (typeof parsed === 'string') {
+                                                            try { parsed = JSON.parse(parsed); } catch (e) { }
+                                                        }
+                                                        if (typeof parsed === 'string') {
+                                                            try { parsed = JSON.parse(parsed); } catch (e) { }
+                                                        }
+                                                        abrirOs = !!(parsed as any)?.abrir_os;
+                                                    }
+
+                                                    if (latest.os_status) {
+                                                        const statusKey = latest.os_status.toLowerCase();
+                                                        const colorClass = osStatusColors[statusKey] || osStatusColors.default;
+                                                        return (
+                                                            <div className={`mt-3 inline-flex items-center justify-center gap-3 px-6 py-3 rounded-xl text-3xl font-black uppercase tracking-widest border-2 ${colorClass}`}>
+                                                                <Wrench className="w-8 h-8" /> SOLICITAÇÃO DE O.S. REALIZADA
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    if (abrirOs) {
                                                         return (
                                                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xl font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
-                                                                <AlertTriangle className="w-5 h-5" /> OS SOLICITADA
+                                                                <AlertTriangle className="w-5 h-5" /> OS RECOMENDADA
                                                             </div>
                                                         );
                                                     }

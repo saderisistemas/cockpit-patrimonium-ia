@@ -117,9 +117,9 @@ export const DetalhesDisparo = () => {
             console.log(`[IRIS] Polling tentativa ${tentativas}/${maxTentativas} para id: ${id}`);
             try {
                 const dados = await api.getDetalhesDisparo(id);
-                console.log('[IRIS] Resultado do polling:', dados.analise ? `analise encontrada: ${dados.analise.id_analise}` : 'sem analise ainda');
+                console.log('[IRIS] Resultado do polling:', dados.analise ? `analise encontrada: ${dados.analise.id}` : 'sem analise ainda');
                 // Aceita análise nova (criada após o disparo) OU qualquer análise se for a 1a vez
-                if (dados.analise && dados.analise.analisado_em && dados.analise.analisado_em >= disparadoEm) {
+                if (dados.analise && dados.analise.criado_em && dados.analise.criado_em >= disparadoEm) {
                     setAnalise(dados.analise);
                     setAnalyzing(false);
                     toast.success('Análise da IA finalizada!', { duration: 4000 });

@@ -385,7 +385,7 @@ export const api = {
     existeAnalise: async (id_disparo: string): Promise<boolean> => {
         const { data, error } = await supabase
             .from('iris_analises')
-            .select('id_analise')
+            .select('id')
             .eq('id_disparo', id_disparo)
             .maybeSingle();
         if (error) {
