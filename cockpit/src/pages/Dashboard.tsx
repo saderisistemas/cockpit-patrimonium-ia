@@ -48,23 +48,12 @@ export const Dashboard = () => {
     const activePendencias = pendencias.filter(p => p.status === 'pendente' && isRelevantEvent(p));
 
     const fetchPendencias = async () => {
-        const timeout = setTimeout(() => {
-            console.error('[Dashboard] Timeout extremo atingido ao buscar pendências! (15s)');
-            setLoading(false);
-            toast.error('O servidor demorou muito para responder. Tentando reconectar...');
-        }, 15000);
-
         try {
-            console.log('[fetchPendencias] Iniciando busca na API...');
             const data = await api.getPendencias();
-            console.log(`[fetchPendencias] Busca concluída. ${data?.length || 0} pendências retornadas.`);
             setPendencias(data || []);
         } catch (error) {
             console.error('[fetchPendencias] Erro ao buscar pendências:', error);
-            toast.error('Erro ao baixar os dados do banco.');
         } finally {
-            clearTimeout(timeout);
-            console.log('[fetchPendencias] Finalizando função e removendo tela de loading.');
             setLoading(false);
         }
     };
