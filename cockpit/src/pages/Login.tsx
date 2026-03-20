@@ -13,28 +13,34 @@ export const Login = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        console.log('[DEBUG LOGIN] Tentando autenticar (V2-stable) email:', email.trim());
         try {
             const { error } = await supabase.auth.signInWithPassword({ 
                 email: email.trim(), 
                 password 
             });
             
+            console.log('[DEBUG LOGIN] Auth completada. Possui erro?', !!error);
+
             if (error) {
+                console.error('[DEBUG LOGIN] Erro retornado pela API:', error.message);
                 toast.error('Credencial inválida ou incorreta. Acesso negado.', {
                     style: { background: '#1a0a0a', color: '#fff', border: '1px solid #8b2323', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
                 });
             } else {
+                console.log('[DEBUG LOGIN] Sucesso! Navegando...');
                 toast.success('Acesso autorizado. Carregando terminal...', {
                     style: { background: '#0a1a0a', color: '#4ade80', border: '1px solid #166534', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
                 });
                 navigate('/');
             }
         } catch (err) {
-            console.error('Erro no login:', err);
+            console.error('[DEBUG LOGIN] Catch block! Exceção catrastrófica:', err);
             toast.error('Erro de conexão ou sistema indisponível.', {
                 style: { background: '#1a0a0a', color: '#fff', border: '1px solid #8b2323', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }
             });
         } finally {
+            console.log('[DEBUG LOGIN] Restaurando botão de carregamento.');
             setLoading(false);
         }
     };
