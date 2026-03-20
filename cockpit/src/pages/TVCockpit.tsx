@@ -68,7 +68,7 @@ const formatTime = (isoString: string) => {
 };
 
 
-type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'descricao_catalogo' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'zona' | 'agrupamento' | 'prioridade'>;
+type PendenciaSimples = Pick<Pendencia, 'id_disparo' | 'nome' | 'patrimonio' | 'endereco' | 'evento_codigo' | 'desc_evento' | 'descricao_catalogo' | 'hora_evento' | 'data_evento' | 'setor' | 'viatura' | 'particao' | 'zona' | 'agrupamento' | 'prioridade' | 'analise_abrir_os'>;
 
 const osStatusColors: Record<string, string> = {
     solicitada: 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_50px_rgba(234,179,8,1)] animate-[pulse_0.6s_ease-in-out_infinite]',
@@ -105,7 +105,7 @@ export const TVCockpit = () => {
             data.map(async (analise: AnaliseTV) => {
                 const { data: pend } = await supabase
                     .from('iris_pendencias')
-                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade')
+                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade, analise_abrir_os')
                     .eq('id_disparo', analise.id_disparo)
                     .maybeSingle();
 
@@ -350,10 +350,10 @@ export const TVCockpit = () => {
                                                         );
                                                     }
 
-                                                    if (abrirOs) {
+                                                    if (abrirOs || latest.pendencia?.analise_abrir_os) {
                                                         return (
                                                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xl font-black uppercase tracking-wider bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
-                                                                <AlertTriangle className="w-5 h-5" /> OS RECOMENDADA
+                                                                <AlertTriangle className="w-6 h-6" /> OS SOLICITADA
                                                             </div>
                                                         );
                                                     }

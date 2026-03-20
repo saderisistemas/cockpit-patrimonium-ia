@@ -7,5 +7,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Supabase URL or Anon Key is missing in environment variables.');
 }
 
-// Em um cenário real, as tipagens geradas (Database) seriam importadas aqui.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storageKey: 'sb-cockpit-auth',
+    },
+});

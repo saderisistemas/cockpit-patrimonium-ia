@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Activity, ShieldAlert, Search, Trash2, AlertTriangle, BrainCircuit, Loader2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -45,9 +46,12 @@ export const Dashboard = () => {
         }
     };
 
-    const activePendencias = pendencias.filter(p => p.status === 'pendente' && isRelevantEvent(p));
+    // Mutex soft-lock pro fetch não sobrepor a si mesmo
+    const fetchInProgress = useRef(false);
 
-    const fetchPendencias = async () => {
+    const fetchPendencias = useCallback(async () => {
+        if (fetchInProgress.current) return;
+        fetchInProgress.current = true;
         try {
             const data = await api.getPendencias();
             setPendencias(data || []);
@@ -55,8 +59,31 @@ export const Dashboard = () => {
             console.error('[fetchPendencias] Erro ao buscar pendências:', error);
         } finally {
             setLoading(false);
+            fetchInProgress.current = false;
         }
-    };
+    }, []);
+
+    // Active pendencias + Search + Sort (tudo unificado em useMemo) limitando a re-renderização pesada
+    const visiblePendencias = useMemo(() => {
+        let baseList = pendencias.filter(p => p.status === 'pendente' && isRelevantEvent(p));
+
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            baseList = baseList.filter(p => 
+                (p.nome && p.nome.toLowerCase().includes(term)) ||
+                (p.id_disparo && p.id_disparo.toLowerCase().includes(term)) ||
+                (p.patrimonio && p.patrimonio.toLowerCase().includes(term)) ||
+                (p.id_cliente && p.id_cliente.toLowerCase().includes(term))
+            );
+        }
+
+        // Sort descending
+        return baseList.sort((a, b) => {
+            const dateA = new Date(`${a.data_evento}T${a.hora_evento}`).getTime();
+            const dateB = new Date(`${b.data_evento}T${b.hora_evento}`).getTime();
+            return dateB - dateA;
+        });
+    }, [pendencias, searchTerm]);
 
     // === AUTO-ANÁLISE E130 ===
     const dispararAutoAnalise = useCallback(async (pendencia: Pendencia) => {
@@ -112,17 +139,45 @@ export const Dashboard = () => {
 
         fetchPendencias();
 
+        // Controla timeout de debounce para evitar flood no servidor quando ocorrerem muitos eventos
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        const debouncedFetch = () => {
+             if (debounceTimer) clearTimeout(debounceTimer);
+             debounceTimer = setTimeout(() => {
+                 fetchPendencias();
+             }, 1000);
+        };
+
         // Inicia subscrição Realtime para pendências (com interceptação E130)
         const subscription = api.subscribePendencias((payload?: unknown) => {
+            const p = payload as { eventType?: string; new?: Pendencia, old?: { id_disparo: string } } | undefined;
+            if (!p) return;
+
             // Se é um INSERT e o toggle está ativo, verificar E130
-            const p = payload as { eventType?: string; new?: Pendencia } | undefined;
-            if (p?.eventType === 'INSERT' && p?.new && autoAnaliseRef.current) {
+            if (p.eventType === 'INSERT' && p.new && autoAnaliseRef.current) {
                 const novaPendencia = p.new;
                 if (novaPendencia.evento_codigo === 'E130' && novaPendencia.status === 'pendente') {
                     dispararAutoAnalise(novaPendencia);
                 }
             }
-            fetchPendencias(); // Recarrega ao receber WebSocket events
+            
+            // Tratamento local do novo dado na tela se possivel, p/ nao frisar a UI, ou aciona refresh debounced.
+            setPendencias(prev => {
+                if (p.eventType === 'INSERT' && p.new) {
+                    const exists = prev.some(item => item.id_disparo === p.new!.id_disparo);
+                    return exists ? prev : [p.new!, ...prev].slice(0, 200);
+                }
+                if (p.eventType === 'UPDATE' && p.new) {
+                    return prev.map(item => item.id_disparo === p.new!.id_disparo ? { ...item, ...p.new! } : item);
+                }
+                if (p.eventType === 'DELETE' && p.old) {
+                    return prev.filter(item => item.id_disparo !== p.old!.id_disparo);
+                }
+                return prev;
+            });
+
+            // Se for update ou mudança, roda no background um refresh de validacao p/ garantir as outras chaves joinadas do Supabase
+            debouncedFetch();
         });
 
         // Subscrição Realtime para config (sincronizar toggle entre abas)
@@ -143,8 +198,9 @@ export const Dashboard = () => {
             subscription.unsubscribe();
             configSub.unsubscribe();
             clearInterval(pollingInterval);
+            if (debounceTimer) clearTimeout(debounceTimer);
         };
-    }, [dispararAutoAnalise]);
+    }, [dispararAutoAnalise, fetchPendencias]);
 
     // Puxado remotamente de lib
 
@@ -232,7 +288,7 @@ export const Dashboard = () => {
                         <div>
                             <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Suspeitas</p>
                             <p className="text-2xl md:text-3xl font-black text-white tabular-nums">
-                                {activePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704' || p.evento_codigo === 'E301' || p.evento_codigo === '9558').length}
+                                {visiblePendencias.filter(p => Number(p.prioridade) === 0 || Number(p.prioridade) === 1 || p.evento_codigo === '9704' || p.evento_codigo === 'E301' || p.evento_codigo === '9558').length}
                             </p>
                         </div>
                     </div>
@@ -244,7 +300,7 @@ export const Dashboard = () => {
                         <div>
                             <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pendentes</p>
                             <p className="text-2xl md:text-3xl font-black text-white tabular-nums">
-                                {activePendencias.length}
+                                {visiblePendencias.length}
                             </p>
                         </div>
                     </div>
@@ -272,7 +328,7 @@ export const Dashboard = () => {
                         <div className="w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
                         <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">Sincronizando Banco de Dados...</span>
                     </div>
-                ) : activePendencias.length === 0 ? (
+                ) : visiblePendencias.length === 0 ? (
                     <div className="px-8 py-20 text-center text-slate-500 font-medium italic">
                         Nenhum evento crítico na fila de monitoramento.
                     </div>
@@ -291,23 +347,7 @@ export const Dashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {[...activePendencias]
-                                        .sort((a, b) => {
-                                            const dateA = new Date(`${a.data_evento}T${a.hora_evento}`);
-                                            const dateB = new Date(`${b.data_evento}T${b.hora_evento}`);
-                                            return dateB.getTime() - dateA.getTime();
-                                        })
-                                        .filter(p => {
-                                            if (!searchTerm) return true;
-                                            const term = searchTerm.toLowerCase();
-                                            return (
-                                                (p.nome && p.nome.toLowerCase().includes(term)) ||
-                                                (p.id_disparo && p.id_disparo.toLowerCase().includes(term)) ||
-                                                (p.patrimonio && p.patrimonio.toLowerCase().includes(term)) ||
-                                                (p.id_cliente && p.id_cliente.toLowerCase().includes(term))
-                                            );
-                                        })
-                                        .map((pend) => {
+                                    {visiblePendencias.map((pend) => {
                                             const prioValue = Number(pend.prioridade);
                                             const prio = getPriorityConfig(prioValue);
                                             const Icon = prio.icon;
@@ -363,23 +403,7 @@ export const Dashboard = () => {
 
                         {/* MOBILE CARDS (hidden on desktop) */}
                         <div className="md:hidden divide-y divide-white/5">
-                            {[...activePendencias]
-                                .sort((a, b) => {
-                                    const dateA = new Date(`${a.data_evento}T${a.hora_evento}`);
-                                    const dateB = new Date(`${b.data_evento}T${b.hora_evento}`);
-                                    return dateB.getTime() - dateA.getTime();
-                                })
-                                .filter(p => {
-                                    if (!searchTerm) return true;
-                                    const term = searchTerm.toLowerCase();
-                                    return (
-                                        (p.nome && p.nome.toLowerCase().includes(term)) ||
-                                        (p.id_disparo && p.id_disparo.toLowerCase().includes(term)) ||
-                                        (p.patrimonio && p.patrimonio.toLowerCase().includes(term)) ||
-                                        (p.id_cliente && p.id_cliente.toLowerCase().includes(term))
-                                    );
-                                })
-                                .map((pend) => {
+                            {visiblePendencias.map((pend) => {
                                     const prioValue = Number(pend.prioridade);
                                     const prio = getPriorityConfig(prioValue);
                                     const Icon = prio.icon;
