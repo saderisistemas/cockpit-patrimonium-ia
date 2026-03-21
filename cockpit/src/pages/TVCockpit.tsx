@@ -105,7 +105,7 @@ export const TVCockpit = () => {
             data.map(async (analise: AnaliseTV) => {
                 const { data: pend } = await supabase
                     .from('iris_pendencias')
-                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade, analise_abrir_os')
+                    .select('id_disparo, nome, patrimonio, endereco, evento_codigo, desc_evento, descricao_catalogo, hora_evento, data_evento, setor, viatura, particao, zona, agrupamento, prioridade')
                     .eq('id_disparo', analise.id_disparo)
                     .maybeSingle();
 
