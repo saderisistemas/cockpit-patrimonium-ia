@@ -154,12 +154,13 @@ export const Dashboard = () => {
             if (!p) return;
 
             // Se é um INSERT e o toggle está ativo, verificar E130
-            if (p.eventType === 'INSERT' && p.new && autoAnaliseRef.current) {
-                const novaPendencia = p.new;
-                if (novaPendencia.evento_codigo === 'E130' && novaPendencia.status === 'pendente') {
-                    dispararAutoAnalise(novaPendencia);
-                }
-            }
+            // Removido disparo via frontend (agora é disparado via banco de dados + pg_net para evitar concorrência)
+            // if (p.eventType === 'INSERT' && p.new && autoAnaliseRef.current) {
+            //     const novaPendencia = p.new;
+            //     if (novaPendencia.evento_codigo === 'E130' && novaPendencia.status === 'pendente') {
+            //         dispararAutoAnalise(novaPendencia);
+            //     }
+            // }
             
             // Tratamento local do novo dado na tela se possivel, p/ nao frisar a UI, ou aciona refresh debounced.
             setPendencias(prev => {
