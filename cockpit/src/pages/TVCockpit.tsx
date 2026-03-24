@@ -146,7 +146,7 @@ export const TVCockpit = () => {
 
         const subscription = supabase
             .channel('tv-analises-realtime')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'iris_analises' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'iris_analises' }, () => {
                 setIsNew(true);
                 fetchAnalises();
                 fetchKPIs();
