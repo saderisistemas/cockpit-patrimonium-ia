@@ -71,6 +71,19 @@ export const api = {
             .subscribe();
     },
 
+    subscribeAnalises: (onUpdate: () => void) => {
+        return supabase
+            .channel('analises-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'iris_analises' },
+                () => {
+                    onUpdate();
+                }
+            )
+            .subscribe();
+    },
+
     // Buscar detalhes do disparo
     getDetalhesDisparo: async (id_disparo: string) => {
         const { data: pendencia, error: err1 } = await supabase

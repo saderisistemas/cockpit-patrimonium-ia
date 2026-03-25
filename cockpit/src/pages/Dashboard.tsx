@@ -181,6 +181,11 @@ export const Dashboard = () => {
             debouncedFetch();
         });
 
+        // Subscrição para atualizações de Análises (Ex: abrir_os alterado por IA)
+        const analisesSub = api.subscribeAnalises(() => {
+            debouncedFetch();
+        });
+
         // Subscrição Realtime para config (sincronizar toggle entre abas)
         const configSub = api.subscribeConfig((chave, valor) => {
             if (chave === 'auto_analise_e130') {
@@ -197,6 +202,7 @@ export const Dashboard = () => {
 
         return () => {
             subscription.unsubscribe();
+            analisesSub.unsubscribe();
             configSub.unsubscribe();
             clearInterval(pollingInterval);
             if (debounceTimer) clearTimeout(debounceTimer);
